@@ -6,6 +6,7 @@ from db_utils import (
     init_db, obtener_empleados, agregar_empleado, actualizar_empleado,
     mover_a_finalizados, obtener_finalizados
 )
+import os
 
 st.set_page_config(layout="wide")
 
@@ -81,19 +82,7 @@ for emp in empleados:
     if emp["mesa"]:
         mesas[emp["mesa"]].append(emp)
 
-# --- BOTONES EN MISMA LÍNEA QUE EL TÍTULO "Área de mesas de trabajo" ---
-col_area, col_reiniciar = st.columns([6, 1])
-with col_area:
-    st.markdown("## 🃏 Área de mesas de trabajo")
-with col_reiniciar:
-    if st.button("🔄 Reiniciar Jornada"):
-        import os
-        if os.path.exists("casino.db"):
-            os.remove("casino.db")
-        st.success("Base de datos reiniciada.")
-        st.rerun()
-
-# ----------- SOLO RESPONSABLES (Agregado / Mesas / Finalizaron) -----------
+# ----------- VISTA PARA RESPONSABLE -----------
 if rol == "Responsable":
 
     with st.sidebar:
@@ -118,13 +107,12 @@ if rol == "Responsable":
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
                 st.rerun()
 
-    # Área de mesas y otros controles sólo para responsables
+    # Botón reiniciar en línea con área mesas
     col_area, col_reiniciar = st.columns([6, 1])
     with col_area:
         st.markdown("## 🃏 Área de mesas de trabajo")
     with col_reiniciar:
         if st.button("🔄 Reiniciar Jornada"):
-            import os
             if os.path.exists("casino.db"):
                 os.remove("casino.db")
             st.success("Base de datos reiniciada.")
@@ -177,14 +165,14 @@ if rol == "Responsable":
                     mover_a_finalizados(emp)
                     st.rerun()
 
-    # Mostrar finalizados solo responsables
+    # Finalizados solo para responsables en sidebar
     with st.sidebar:
         if finalizados:
             st.markdown("#### ✅ Finalizaron jornada")
             for emp in finalizados:
                 st.markdown(f"- 👋 {emp['nombre']} ({emp['categoria']})")
 
-# ----------- ASIGNACIONES PENDIENTES + BOTÓN ACTUALIZAR (para todos) -----------
+# ----------- ASIGNACIONES PENDIENTES Y BOTÓN ACTUALIZAR PARA TODOS -----------
 col_asig, col_btn_actualizar = st.columns([6, 1])
 with col_asig:
     st.markdown("### 📝 Asignaciones pendientes")
