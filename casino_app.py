@@ -75,7 +75,7 @@ def mostrar_reloj_js():
 
 # Auto-refresh cada 5 segundos
 st.experimental_set_query_params(refresh=uuid.uuid4())
-st.experimental_rerun = st.experimental_rerun
+st.rerun = st.rerun
 
 # ----------- INICIALIZACIÓN -----------
 init_db()
