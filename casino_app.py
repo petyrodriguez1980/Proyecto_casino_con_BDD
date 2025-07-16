@@ -87,13 +87,9 @@ if rol == "Responsable":
 
     with st.sidebar:
         st.markdown("## ➕ Agregar empleado")
+        nombre_nuevo = st.text_input("Nombre", key="nombre_nuevo")
         opciones_categoria = ["Seleccionar", "Jefe de Mesa", "Crupier de 1º", "Crupier de 2º", "Crupier de 3º"]
-        
-        nombre_nuevo = st.text_input("Nombre", key="nombre_nuevo", value=st.session_state.get("nombre_nuevo", ""))
-        categoria_nueva = st.selectbox(
-            "Categoría", opciones_categoria, key="categoria_nueva",
-            index=opciones_categoria.index(st.session_state.get("categoria_nueva", "Seleccionar"))
-        )
+        categoria_nueva = st.selectbox("Categoría", opciones_categoria, key="categoria_nueva")
 
         if st.button("Agregar"):
             if not nombre_nuevo:
@@ -106,9 +102,8 @@ if rol == "Responsable":
                     "foto": None, "mesa": None, "mesa_asignada": None, "mensaje": ""
                 }
                 agregar_empleado(nuevo)
-                # Limpiar inputs
-                st.session_state["nombre_nuevo"] = ""
-                st.session_state["categoria_nueva"] = "Seleccionar"
+                del st.session_state["nombre_nuevo"]
+                del st.session_state["categoria_nueva"]
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
                 st.rerun()
 
