@@ -4,7 +4,7 @@ import uuid
 import hashlib
 from db_utils import (
     init_db, obtener_empleados, agregar_empleado, actualizar_empleado,
-    eliminar_empleado, mover_a_finalizados, obtener_finalizados
+    mover_a_finalizados, obtener_finalizados
 )
 
 st.set_page_config(layout="wide")
@@ -101,8 +101,8 @@ if rol == "Responsable":
                     "foto": None, "mesa": None, "mesa_asignada": None, "mensaje": ""
                 }
                 agregar_empleado(nuevo)
-                st.session_state.nombre_nuevo = ""
-                st.session_state.categoria_nueva = "Seleccionar"
+                del st.session_state["nombre_nuevo"]
+                del st.session_state["categoria_nueva"]
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
                 st.rerun()
 
@@ -149,7 +149,7 @@ if rol == "Responsable":
                     emp["mesa_asignada"] = nueva_mesa_asig
                     emp["mensaje"] = nuevo_mensaje
                     actualizar_empleado(emp)
-                    st.rerun()
+                    st.experimental_rerun()
 
                 if st.button("🛑 Finalizar jornada", key=f"fin_{emp['id']}"):
                     mover_a_finalizados(emp)
