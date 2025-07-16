@@ -86,9 +86,9 @@ if rol == "Responsable":
 
     with st.sidebar:
         st.markdown("## ➕ Agregar empleado")
-        nombre_nuevo = st.text_input("Nombre")
+        nombre_nuevo = st.text_input("Nombre", key="nombre_nuevo")
         opciones_categoria = ["Seleccionar", "Jefe de Mesa", "Crupier de 1º", "Crupier de 2º", "Crupier de 3º"]
-        categoria_nueva = st.selectbox("Categoría", opciones_categoria)
+        categoria_nueva = st.selectbox("Categoría", opciones_categoria, key="categoria_nueva")
 
         if st.button("Agregar"):
             if not nombre_nuevo:
@@ -101,6 +101,8 @@ if rol == "Responsable":
                     "foto": None, "mesa": None, "mesa_asignada": None, "mensaje": ""
                 }
                 agregar_empleado(nuevo)
+                st.session_state.nombre_nuevo = ""
+                st.session_state.categoria_nueva = "Seleccionar"
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
                 st.rerun()
 
@@ -138,10 +140,17 @@ if rol == "Responsable":
     for emp in empleados:
         if not emp["mesa"]:
             with st.expander(f"👤 {emp['nombre']} ({emp['categoria']})"):
-                emp["mesa_asignada"] = st.selectbox("Asignar a mesa:", [None] + nombres_mesas,
+                nueva_mesa_asig = st.selectbox("Asignar a mesa:", [None] + nombres_mesas,
                     index=0 if not emp["mesa_asignada"] else nombres_mesas.index(emp["mesa_asignada"]) + 1,
                     key=f"mesa_asig_{emp['id']}")
-                emp["mensaje"] = st.text_input("Mensaje opcional:", key=f"msg_{emp['id']}")
+                nuevo_mensaje = st.text_input("Mensaje opcional:", value=emp["mensaje"], key=f"msg_{emp['id']}")
+
+                if nueva_mesa_asig != emp["mesa_asignada"] or nuevo_mensaje != emp["mensaje"]:
+                    emp["mesa_asignada"] = nueva_mesa_asig
+                    emp["mensaje"] = nuevo_mensaje
+                    actualizar_empleado(emp)
+                    st.rerun()
+
                 if st.button("🛑 Finalizar jornada", key=f"fin_{emp['id']}"):
                     mover_a_finalizados(emp)
                     st.rerun()
