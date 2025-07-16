@@ -6,6 +6,7 @@ from db_utils import (
     init_db, obtener_empleados, agregar_empleado, actualizar_empleado,
     mover_a_finalizados, obtener_finalizados
 )
+import os
 
 st.set_page_config(layout="wide")
 
@@ -81,19 +82,7 @@ for emp in empleados:
     if emp["mesa"]:
         mesas[emp["mesa"]].append(emp)
 
-# --- BOTONES EN MISMA LÍNEA QUE EL TÍTULO "Área de mesas de trabajo" ---
-col_area, col_reiniciar = st.columns([6, 1])
-with col_area:
-    st.markdown("## 🃏 Área de mesas de trabajo")
-with col_reiniciar:
-    if st.button("🔄 Reiniciar Jornada"):
-        import os
-        if os.path.exists("casino.db"):
-            os.remove("casino.db")
-        st.success("Base de datos reiniciada.")
-        st.rerun()
-
-# ----------- SOLO PARA RESPONSABLES -----------
+# ----------- VISTA PARA RESPONSABLE -----------
 if rol == "Responsable":
 
     with st.sidebar:
@@ -113,63 +102,77 @@ if rol == "Responsable":
                     "foto": None, "mesa": None, "mesa_asignada": None, "mensaje": ""
                 }
                 agregar_empleado(nuevo)
-                # Limpiar inputs después de agregar
-                st.session_state["nombre_nuevo"] = ""
-                st.session_state["categoria_nueva"] = "Seleccionar"
+                del st.session_state["nombre_nuevo"]
+                del st.session_state["categoria_nueva"]
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
                 st.rerun()
 
-st.markdown("")  # Separación visual
+    # Botón reiniciar en línea con área mesas
+    col_area, col_reiniciar = st.columns([6, 1])
+    with col_area:
+        st.markdown("## 🃏 Área de mesas de trabajo")
+    with col_reiniciar:
+        if st.button("🔄 Reiniciar Jornada"):
+            if os.path.exists("casino.db"):
+                os.remove("casino.db")
+            st.success("Base de datos reiniciada.")
+            st.rerun()
 
-col_mesas = st.columns(4)
+    col_mesas = st.columns(4)
+    for i, (nombre_mesa, empleados_mesa) in enumerate(mesas.items()):
+        with col_mesas[i % 4]:
+            with st.container():
+                st.markdown(f"""<div style='border: 2px solid #ccc; border-radius: 12px; padding: 10px; margin-bottom: 10px; background-color: #f9f9f9;'>
+                    <h4 style='text-align: center;'>🃏 {nombre_mesa}</h4>""", unsafe_allow_html=True)
+                for emp in empleados_mesa:
+                    st.markdown(f"- 👤 {emp['nombre']} ({emp['categoria']})")
+                    if st.button(f"❌ Liberar", key=f"lib_{emp['id']}"):
+                        emp["mesa"] = None
+                        actualizar_empleado(emp)
+                        st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
 
-for i, (nombre_mesa, empleados_mesa) in enumerate(mesas.items()):
-    with col_mesas[i % 4]:
-        with st.container():
-            st.markdown(f"""<div style='border: 2px solid #ccc; border-radius: 12px; padding: 10px; margin-bottom: 10px; background-color: #f9f9f9;'>
-                <h4 style='text-align: center;'>🃏 {nombre_mesa}</h4>""", unsafe_allow_html=True)
-            for emp in empleados_mesa:
-                st.markdown(f"- 👤 {emp['nombre']} ({emp['categoria']})")
-                if st.button(f"❌ Liberar", key=f"lib_{emp['id']}"):
-                    emp["mesa"] = None
+    col_descanso, col_reloj = st.columns([6, 1])
+    with col_descanso:
+        st.markdown("## 🛋️ Sala de descanso")
+    with col_reloj:
+        mostrar_reloj_js()
+
+    if st.button("📦 ASIGNAR empleados a sus mesas"):
+        for emp in empleados:
+            if not emp["mesa"] and emp["mesa_asignada"]:
+                emp["mesa"] = emp["mesa_asignada"]
+                emp["mesa_asignada"] = None
+                actualizar_empleado(emp)
+        st.success("Empleados asignados.")
+        st.rerun()
+
+    for emp in empleados:
+        if not emp["mesa"]:
+            with st.expander(f"👤 {emp['nombre']} ({emp['categoria']})"):
+                nueva_mesa_asig = st.selectbox("Asignar a mesa:", [None] + nombres_mesas,
+                    index=0 if not emp["mesa_asignada"] else nombres_mesas.index(emp["mesa_asignada"]) + 1,
+                    key=f"mesa_asig_{emp['id']}")
+                nuevo_mensaje = st.text_input("Mensaje opcional:", value=emp["mensaje"], key=f"msg_{emp['id']}")
+
+                if nueva_mesa_asig != emp["mesa_asignada"] or nuevo_mensaje != emp["mensaje"]:
+                    emp["mesa_asignada"] = nueva_mesa_asig
+                    emp["mensaje"] = nuevo_mensaje
                     actualizar_empleado(emp)
                     st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
 
-col_descanso, col_reloj = st.columns([6, 1])
-with col_descanso:
-    st.markdown("## 🛋️ Sala de descanso")
-with col_reloj:
-    mostrar_reloj_js()
+                if st.button("🛑 Finalizar jornada", key=f"fin_{emp['id']}"):
+                    mover_a_finalizados(emp)
+                    st.rerun()
 
-if st.button("📦 ASIGNAR empleados a sus mesas"):
-    for emp in empleados:
-        if not emp["mesa"] and emp["mesa_asignada"]:
-            emp["mesa"] = emp["mesa_asignada"]
-            emp["mesa_asignada"] = None
-            actualizar_empleado(emp)
-    st.success("Empleados asignados.")
-    st.rerun()
+    # Finalizados solo para responsables en sidebar
+    with st.sidebar:
+        if finalizados:
+            st.markdown("#### ✅ Finalizaron jornada")
+            for emp in finalizados:
+                st.markdown(f"- 👋 {emp['nombre']} ({emp['categoria']})")
 
-for emp in empleados:
-    if not emp["mesa"]:
-        with st.expander(f"👤 {emp['nombre']} ({emp['categoria']})"):
-            nueva_mesa_asig = st.selectbox("Asignar a mesa:", [None] + nombres_mesas,
-                index=0 if not emp["mesa_asignada"] else nombres_mesas.index(emp["mesa_asignada"]) + 1,
-                key=f"mesa_asig_{emp['id']}")
-            nuevo_mensaje = st.text_input("Mensaje opcional:", value=emp["mensaje"], key=f"msg_{emp['id']}")
-
-            if nueva_mesa_asig != emp["mesa_asignada"] or nuevo_mensaje != emp["mensaje"]:
-                emp["mesa_asignada"] = nueva_mesa_asig
-                emp["mensaje"] = nuevo_mensaje
-                actualizar_empleado(emp)
-                st.rerun()
-
-            if st.button("🛑 Finalizar jornada", key=f"fin_{emp['id']}"):
-                mover_a_finalizados(emp)
-                st.rerun()
-
-# ----------- ASIGNACIONES PENDIENTES + BOTÓN ACTUALIZAR -----------
+# ----------- ASIGNACIONES PENDIENTES Y BOTÓN ACTUALIZAR PARA TODOS -----------
 col_asig, col_btn_actualizar = st.columns([6, 1])
 with col_asig:
     st.markdown("### 📝 Asignaciones pendientes")
@@ -181,11 +184,3 @@ for emp in empleados:
     if not emp["mesa"] and emp["mesa_asignada"]:
         st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
                 (f"Mensaje: _{emp['mensaje']} _" if emp['mensaje'] else ""))
-
-# ----------- FINALIZARON JORNADA SOLO RESPONSABLE -----------
-with st.sidebar:
-    if rol == "Responsable":
-        if finalizados:
-            st.markdown("#### ✅ Finalizaron jornada")
-            for emp in finalizados:
-                st.markdown(f"- 👋 {emp['nombre']} ({emp['categoria']})")
