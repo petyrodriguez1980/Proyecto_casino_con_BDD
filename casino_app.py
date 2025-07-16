@@ -85,42 +85,27 @@ for emp in empleados:
 # ----------- VISTA PARA RESPONSABLE -----------
 if rol == "Responsable":
 
-    # Inicializar variables en session_state para evitar errores al asignar
-    if "nombre_nuevo" not in st.session_state:
-        st.session_state["nombre_nuevo"] = ""
-    if "categoria_nueva" not in st.session_state:
-        st.session_state["categoria_nueva"] = "Seleccionar"
-
     with st.sidebar:
         st.markdown("## ➕ Agregar empleado")
-        opciones_categoria = ["Seleccionar", "Jefe de Mesa", "Crupier de 1º", "Crupier de 2º", "Crupier de 3º"]
-
         nombre_nuevo = st.text_input("Nombre", key="nombre_nuevo")
-        categoria_nueva = st.selectbox("Categoría", opciones_categoria, index=opciones_categoria.index(st.session_state["categoria_nueva"]), key="categoria_nueva")
+        opciones_categoria = ["Seleccionar", "Jefe de Mesa", "Crupier de 1º", "Crupier de 2º", "Crupier de 3º"]
+        categoria_nueva = st.selectbox("Categoría", opciones_categoria, key="categoria_nueva")
 
         if st.button("Agregar"):
-            if not st.session_state["nombre_nuevo"]:
+            if not nombre_nuevo:
                 st.warning("Por favor ingresa un nombre.")
-            elif st.session_state["categoria_nueva"] == "Seleccionar":
+            elif categoria_nueva == "Seleccionar":
                 st.warning("Por favor selecciona una categoría válida.")
             else:
                 nuevo = {
-                    "id": str(uuid.uuid4()),
-                    "nombre": st.session_state["nombre_nuevo"],
-                    "categoria": st.session_state["categoria_nueva"],
-                    "foto": None,
-                    "mesa": None,
-                    "mesa_asignada": None,
-                    "mensaje": ""
+                    "id": str(uuid.uuid4()), "nombre": nombre_nuevo, "categoria": categoria_nueva,
+                    "foto": None, "mesa": None, "mesa_asignada": None, "mensaje": ""
                 }
                 agregar_empleado(nuevo)
-
-                # Limpiar inputs usando session_state
-                st.session_state["nombre_nuevo"] = ""
-                st.session_state["categoria_nueva"] = "Seleccionar"
-
-                st.success(f"{nuevo['nombre']} agregado a sala de descanso.")
-                st.experimental_rerun()  # Usa experimental_rerun para evitar problemas con rerun
+                del st.session_state["nombre_nuevo"]
+                del st.session_state["categoria_nueva"]
+                st.success(f"{nombre_nuevo} agregado a sala de descanso.")
+                st.rerun()
 
     # Botón reiniciar en línea con área mesas
     col_area, col_reiniciar = st.columns([6, 1])
