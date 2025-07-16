@@ -149,7 +149,7 @@ if rol == "Responsable":
                     emp["mesa_asignada"] = nueva_mesa_asig
                     emp["mensaje"] = nuevo_mensaje
                     actualizar_empleado(emp)
-                    st.experimental_rerun()
+                    st.rerun()
 
                 if st.button("🛑 Finalizar jornada", key=f"fin_{emp['id']}"):
                     mover_a_finalizados(emp)
