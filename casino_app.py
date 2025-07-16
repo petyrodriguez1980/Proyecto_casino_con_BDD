@@ -74,7 +74,7 @@ def mostrar_reloj_js():
     components.html(reloj_html, height=80)
 
 # Auto-refresh cada 5 segundos
-st.experimental_set_query_params(refresh=uuid.uuid4())
+st.set_query_params(refresh=uuid.uuid4())
 st.rerun = st.rerun
 
 # ----------- INICIALIZACIÓN -----------
