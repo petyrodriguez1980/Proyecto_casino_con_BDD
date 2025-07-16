@@ -73,6 +73,13 @@ def mostrar_reloj_js():
     components.html(reloj_html, height=80)
 
 # ----------- INICIALIZACIÓN -----------
+
+# Inicializar variables en session_state para evitar errores y mantener control
+if "nombre_nuevo" not in st.session_state:
+    st.session_state["nombre_nuevo"] = ""
+if "categoria_nueva" not in st.session_state:
+    st.session_state["categoria_nueva"] = "Seleccionar"
+
 init_db()
 nombres_mesas = ["RA1", "RA2", "RA3", "RA4", "BJ1", "BJ2", "PK1", "iT-PK", "iT-BJ", "TEXAS", "PB", "Mini PB"]
 empleados = obtener_empleados()
@@ -87,24 +94,36 @@ if rol == "Responsable":
 
     with st.sidebar:
         st.markdown("## ➕ Agregar empleado")
-        nombre_nuevo = st.text_input("Nombre", key="nombre_nuevo")
         opciones_categoria = ["Seleccionar", "Jefe de Mesa", "Crupier de 1º", "Crupier de 2º", "Crupier de 3º"]
-        categoria_nueva = st.selectbox("Categoría", opciones_categoria, key="categoria_nueva")
+
+        nombre_nuevo = st.text_input("Nombre", key="nombre_nuevo")
+        categoria_nueva = st.selectbox(
+            "Categoría",
+            opciones_categoria,
+            index=opciones_categoria.index(st.session_state["categoria_nueva"]),
+            key="categoria_nueva"
+        )
 
         if st.button("Agregar"):
-            if not nombre_nuevo:
+            if not st.session_state["nombre_nuevo"]:
                 st.warning("Por favor ingresa un nombre.")
-            elif categoria_nueva == "Seleccionar":
+            elif st.session_state["categoria_nueva"] == "Seleccionar":
                 st.warning("Por favor selecciona una categoría válida.")
             else:
                 nuevo = {
-                    "id": str(uuid.uuid4()), "nombre": nombre_nuevo, "categoria": categoria_nueva,
-                    "foto": None, "mesa": None, "mesa_asignada": None, "mensaje": ""
+                    "id": str(uuid.uuid4()),
+                    "nombre": st.session_state["nombre_nuevo"],
+                    "categoria": st.session_state["categoria_nueva"],
+                    "foto": None,
+                    "mesa": None,
+                    "mesa_asignada": None,
+                    "mensaje": ""
                 }
                 agregar_empleado(nuevo)
-                del st.session_state["nombre_nuevo"]
-                del st.session_state["categoria_nueva"]
-                st.success(f"{nombre_nuevo} agregado a sala de descanso.")
+                # Limpiar inputs
+                st.session_state["nombre_nuevo"] = ""
+                st.session_state["categoria_nueva"] = "Seleccionar"
+                st.success(f"{nuevo['nombre']} agregado a sala de descanso.")
                 st.rerun()
 
     # Botón reiniciar en línea con área mesas
@@ -115,6 +134,9 @@ if rol == "Responsable":
         if st.button("🔄 Reiniciar Jornada"):
             if os.path.exists("casino.db"):
                 os.remove("casino.db")
+            # También limpiar inputs acá
+            st.session_state["nombre_nuevo"] = ""
+            st.session_state["categoria_nueva"] = "Seleccionar"
             st.success("Base de datos reiniciada.")
             st.rerun()
 
@@ -122,7 +144,7 @@ if rol == "Responsable":
     for i, (nombre_mesa, empleados_mesa) in enumerate(mesas.items()):
         with col_mesas[i % 4]:
             with st.container():
-                st.markdown(f"""<div style='border: 2px solid #ccc; border-radius: 12px; padding: 10px; margin-bottom: 10px; background-color: #f9f9f9;'>
+                st.markdown(f"""<div style='border: 2px solid #ccc; border-radius: 12px; padding: 10px; margin-bottom: 10px; background-color: #f9f9f9;' >
                     <h4 style='text-align: center;'>🃏 {nombre_mesa}</h4>""", unsafe_allow_html=True)
                 for emp in empleados_mesa:
                     st.markdown(f"- 👤 {emp['nombre']} ({emp['categoria']})")
