@@ -102,8 +102,8 @@ if rol == "Responsable":
                     "foto": None, "mesa": None, "mesa_asignada": None, "mensaje": ""
                 }
                 agregar_empleado(nuevo)
-                st.session_state["nombre_nuevo"] = ""
-                st.session_state["categoria_nueva"] = "Seleccionar"
+                del st.session_state["nombre_nuevo"]
+                del st.session_state["categoria_nueva"]
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
                 st.rerun()
 
