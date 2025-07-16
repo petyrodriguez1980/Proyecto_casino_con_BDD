@@ -82,7 +82,7 @@ for emp in empleados:
         mesas[emp["mesa"]].append(emp)
 
 # --- BOTONES EN MISMA LÍNEA QUE EL TÍTULO "Área de mesas de trabajo" ---
-col_area, col_reiniciar, col_actualizar = st.columns([6, 1, 1])
+col_area, col_reiniciar = st.columns([6, 1])
 with col_area:
     st.markdown("## 🃏 Área de mesas de trabajo")
 with col_reiniciar:
@@ -91,9 +91,6 @@ with col_reiniciar:
         if os.path.exists("casino.db"):
             os.remove("casino.db")
         st.success("Base de datos reiniciada.")
-        st.rerun()
-with col_actualizar:
-    if st.button("🔃 Actualizar Descanso"):
         st.rerun()
 
 # ----------- SOLO PARA RESPONSABLES -----------
@@ -171,8 +168,14 @@ for emp in empleados:
                 mover_a_finalizados(emp)
                 st.rerun()
 
-# ----------- ASIGNACIONES PENDIENTES -----------
-st.markdown("### 📝 Asignaciones pendientes")
+# ----------- ASIGNACIONES PENDIENTES + BOTÓN ACTUALIZAR -----------
+col_asig, col_btn_actualizar = st.columns([6, 1])
+with col_asig:
+    st.markdown("### 📝 Asignaciones pendientes")
+with col_btn_actualizar:
+    if st.button("ACTUALIZAR"):
+        st.rerun()
+
 for emp in empleados:
     if not emp["mesa"] and emp["mesa_asignada"]:
         st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
