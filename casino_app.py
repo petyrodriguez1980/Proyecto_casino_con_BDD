@@ -92,25 +92,25 @@ if rol == "Responsable":
         categoria_nueva = st.selectbox("Categoría", opciones_categoria, key="categoria_nueva")
 
         if st.button("Agregar"):
-    if not nombre_nuevo:
-        st.warning("Por favor ingresa un nombre.")
-    elif categoria_nueva == "Seleccionar":
-        st.warning("Por favor selecciona una categoría válida.")
-    else:
-        nuevo = {
-            "id": str(uuid.uuid4()), "nombre": nombre_nuevo, "categoria": categoria_nueva,
-            "foto": None, "mesa": None, "mesa_asignada": None, "mensaje": ""
-        }
-        agregar_empleado(nuevo)
-
-        # ✅ Limpiar campos
-        if "nombre_nuevo" in st.session_state:
-            del st.session_state["nombre_nuevo"]
-        if "categoria_nueva" in st.session_state:
-            del st.session_state["categoria_nueva"]
-
-        st.success(f"{nombre_nuevo} agregado a sala de descanso.")
-        st.rerun()
+            if not nombre_nuevo:
+                st.warning("Por favor ingresa un nombre.")
+            elif categoria_nueva == "Seleccionar":
+                st.warning("Por favor selecciona una categoría válida.")
+            else:
+                nuevo = {
+                    "id": str(uuid.uuid4()), "nombre": nombre_nuevo, "categoria": categoria_nueva,
+                    "foto": None, "mesa": None, "mesa_asignada": None, "mensaje": ""
+                }
+                agregar_empleado(nuevo)
+                
+                # ✅ Limpiar campos
+                if "nombre_nuevo" in st.session_state:
+                    del st.session_state["nombre_nuevo"]
+                if "categoria_nueva" in st.session_state:
+                    del st.session_state["categoria_nueva"]
+                    
+                st.success(f"{nombre_nuevo} agregado a sala de descanso.")
+                st.rerun()
 
     # Botón reiniciar en línea con área mesas
     col_area, col_reiniciar = st.columns([6, 1])
