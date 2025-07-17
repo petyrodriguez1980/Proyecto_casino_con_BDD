@@ -145,13 +145,27 @@ if rol == "Responsable":
         mostrar_reloj_js()
 
     if st.button("📦 ASIGNAR empleados a sus mesas"):
+    ids_asignados = []
+    for emp in empleados:
+        if not emp["mesa"] and emp["mesa_asignada"]:
+            emp["mesa"] = emp["mesa_asignada"]
+            emp["mesa_asignada"] = None
+            actualizar_empleado(emp)
+            ids_asignados.append(emp["id"])
+
+    # Guardamos los IDs para limpiar sus mensajes después del rerun
+    st.session_state["limpiar_mensajes_ids"] = ids_asignados
+    st.success("Empleados asignados.")
+    st.rerun()
+
+
+    # Limpieza de mensajes si fue solicitada
+    if "limpiar_mensajes_ids" in st.session_state:
         for emp in empleados:
-            if not emp["mesa"] and emp["mesa_asignada"]:
-                emp["mesa"] = emp["mesa_asignada"]
-                emp["mesa_asignada"] = None
-                actualizar_empleado(emp)
-        st.success("Empleados asignados.")
-        st.rerun()
+            if emp["id"] in st.session_state["limpiar_mensajes_ids"]:
+                st.session_state[f"msg_{emp['id']}"] = ""
+        del st.session_state["limpiar_mensajes_ids"]
+
 
     for emp in empleados:
         if not emp["mesa"]:
