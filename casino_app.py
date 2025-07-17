@@ -209,4 +209,4 @@ with col_btn_actualizar:
 for emp in empleados:
     if not emp["mesa"] and emp["mesa_asignada"]:
         st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
-                (f"Mensaje: _{emp['mensaje']} _" if emp['mensaje'] else ""))
+                (f"Mensaje: {emp['mensaje']} " if emp['mensaje'] else ""))
