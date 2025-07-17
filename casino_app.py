@@ -150,6 +150,7 @@ if rol == "Responsable":
             if not emp["mesa"] and emp["mesa_asignada"]:
                 emp["mesa"] = emp["mesa_asignada"]
                 emp["mesa_asignada"] = None
+                emp["mensaje"] = ""  # 🧹 Limpia el mensaje en la BDD
                 actualizar_empleado(emp)
                 ids_asignados.append(emp["id"])
                 
