@@ -87,8 +87,9 @@ if rol == "Responsable":
 
     # Limpieza después de agregar
     if st.session_state.get("limpiar_campos", False):
-        st.session_state["nombre_nuevo"] = ""
-        st.session_state["categoria_nueva"] = "Seleccionar"
+        for k in ["nombre_nuevo", "categoria_nueva"]:
+            if k in st.session_state:
+                del st.session_state[k]
         st.session_state["limpiar_campos"] = False
 
     with st.sidebar:
@@ -109,9 +110,8 @@ if rol == "Responsable":
                 }
                 agregar_empleado(nuevo)
                 st.session_state["limpiar_campos"] = True
-                st.query_params.update(limpio="1")  # ✅ Reemplazo correcto
+                st.query_params["limpio"] = "1"  # fuerza un render correcto
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
-                st.rerun()
 
     # Botón reiniciar en línea con área mesas
     col_area, col_reiniciar = st.columns([6, 1])
@@ -155,26 +155,37 @@ if rol == "Responsable":
 
     for emp in empleados:
         if not emp["mesa"]:
+            msg_key = f"msg_{emp['id']}"
+            mesa_key = f"mesa_asig_{emp['id']}"
             open_key = f"exp_open_{emp['id']}"
+
+            if msg_key not in st.session_state:
+                st.session_state[msg_key] = emp["mensaje"]
+
+            if mesa_key not in st.session_state:
+                st.session_state[mesa_key] = emp["mesa_asignada"]
+
             if open_key not in st.session_state:
                 st.session_state[open_key] = False
 
             with st.expander(f"👤 {emp['nombre']} ({emp['categoria']})", expanded=st.session_state[open_key]):
                 nueva_mesa_asig = st.selectbox("Asignar a mesa:", [None] + nombres_mesas,
-                    index=0 if not emp["mesa_asignada"] else nombres_mesas.index(emp["mesa_asignada"]) + 1,
-                    key=f"mesa_asig_{emp['id']}")
-                
-                nuevo_mensaje = st.text_input("Mensaje opcional:", value=emp["mensaje"], key=f"msg_{emp['id']}")
+                    index=0 if not st.session_state[mesa_key] else nombres_mesas.index(st.session_state[mesa_key]) + 1,
+                    key=mesa_key)
 
-                # Marca el expander como abierto si el usuario lo tocó
+                nuevo_mensaje = st.text_input("Mensaje opcional:", key=msg_key)
+
                 st.session_state[open_key] = True
 
-                if nueva_mesa_asig != emp["mesa_asignada"] or nuevo_mensaje != emp["mensaje"]:
-                    emp["mesa_asignada"] = nueva_mesa_asig
-                    emp["mensaje"] = nuevo_mensaje
+                if st.session_state[mesa_key] != emp["mesa_asignada"] or st.session_state[msg_key] != emp["mensaje"]:
+                    emp["mesa_asignada"] = st.session_state[mesa_key]
+                    emp["mensaje"] = st.session_state[msg_key]
                     actualizar_empleado(emp)
-                    st.session_state[f"msg_{emp['id']}"] = ""  # Limpia el campo
-                    st.session_state[open_key] = False         # Cierra el expander
+
+                    st.session_state[msg_key] = ""
+                    st.session_state[mesa_key] = None
+                    st.session_state[open_key] = False
+
                     st.rerun()
 
                 if st.button("🛑 Finalizar jornada", key=f"fin_{emp['id']}"):
