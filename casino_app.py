@@ -188,15 +188,15 @@ if rol == "Responsable":
 
     # Finalizados solo para responsables en sidebar
     with st.sidebar:
-    if finalizados:
-        st.markdown("#### ✅ Finalizaron jornada")
-        for emp in finalizados:
-            st.markdown(f"**👋 {emp['nombre']} ({emp['categoria']})**")
-            if st.button("🔁 Reingresar", key=f"reing_{emp['id']}"):
-                from db_utils import reingresar_empleado
-                reingresar_empleado(emp)
-                st.success(f"{emp['nombre']} fue reincorporado a la sala de descanso.")
-                st.rerun()
+        if finalizados:
+            st.markdown("#### ✅ Finalizaron jornada")
+            for emp in finalizados:
+                st.markdown(f"**👋 {emp['nombre']} ({emp['categoria']})**")
+                if st.button("🔁 Reingresar", key=f"reing_{emp['id']}"):
+                    from db_utils import reingresar_empleado
+                    reingresar_empleado(emp)
+                    st.success(f"{emp['nombre']} fue reincorporado a la sala de descanso.")
+                    st.rerun()
 
 # ----------- ASIGNACIONES PENDIENTES Y BOTÓN ACTUALIZAR PARA TODOS -----------
 col_asig, col_btn_actualizar = st.columns([6, 1])
