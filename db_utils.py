@@ -78,15 +78,21 @@ def obtener_finalizados():
         return [dict(zip(columnas, fila)) for fila in filas]
 
 def reingresar_empleado(emp):
-    from tinydb import TinyDB, Query
-    db = TinyDB("casino.db")
-    finalizados = db.table("finalizados")
-    empleados = db.table("empleados")
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
 
-    finalizados.remove(Query().id == emp["id"])
-    
-    # Restauramos al estado de descanso
-    emp["mesa"] = None
-    emp["mesa_asignada"] = None
-    emp["mensaje"] = ""
-    empleados.insert(emp)
+        # Eliminamos de finalizados
+        cursor.execute("DELETE FROM finalizados WHERE id = ?", (emp["id"],))
+
+        # Restauramos en sala de descanso
+        cursor.execute("""
+            INSERT INTO empleados (id, nombre, categoria, foto, mesa, mesa_asignada, mensaje)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            emp["id"], emp["nombre"], emp["categoria"],
+            None,  # foto
+            None,  # mesa
+            None,  # mesa_asignada
+            ""     # mensaje
+        ))
+        conn.commit()
