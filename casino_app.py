@@ -110,7 +110,7 @@ if rol == "Responsable":
                 }
                 agregar_empleado(nuevo)
                 st.session_state["limpiar_campos"] = True
-                st.experimental_set_query_params(limpio="1")  # fuerza un render correcto
+                st.query_params(limpio="1")  # fuerza un render correcto
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
 
     # Botón reiniciar en línea con área mesas
