@@ -76,3 +76,17 @@ def obtener_finalizados():
         filas = cursor.fetchall()
         columnas = [col[0] for col in cursor.description]
         return [dict(zip(columnas, fila)) for fila in filas]
+
+def reingresar_empleado(emp):
+    from tinydb import TinyDB, Query
+    db = TinyDB("casino.db")
+    finalizados = db.table("finalizados")
+    empleados = db.table("empleados")
+
+    finalizados.remove(Query().id == emp["id"])
+    
+    # Restauramos al estado de descanso
+    emp["mesa"] = None
+    emp["mesa_asignada"] = None
+    emp["mensaje"] = ""
+    empleados.insert(emp)
