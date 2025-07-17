@@ -87,9 +87,8 @@ if rol == "Responsable":
 
     # Limpieza después de agregar
     if st.session_state.get("limpiar_campos", False):
-        for k in ["nombre_nuevo", "categoria_nueva"]:
-            if k in st.session_state:
-                del st.session_state[k]
+        st.session_state["nombre_nuevo"] = ""
+        st.session_state["categoria_nueva"] = "Seleccionar"
         st.session_state["limpiar_campos"] = False
 
     with st.sidebar:
@@ -110,8 +109,9 @@ if rol == "Responsable":
                 }
                 agregar_empleado(nuevo)
                 st.session_state["limpiar_campos"] = True
-                st.experimental_set_query_params(limpio="1")  # fuerza un render correcto
+                st.query_params.update(limpio="1")  # ✅ Reemplazo correcto
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
+                st.rerun()
 
     # Botón reiniciar en línea con área mesas
     col_area, col_reiniciar = st.columns([6, 1])
