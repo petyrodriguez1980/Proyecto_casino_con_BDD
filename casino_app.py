@@ -155,15 +155,27 @@ if rol == "Responsable":
 
     for emp in empleados:
         if not emp["mesa"]:
+            # Limpiar el campo "Mensaje opcional" si está marcado
+            if st.session_state.get(f"limpiar_msg_{emp['id']}", False):
+                st.session_state[f"msg_{emp['id']}"] = ""
+                st.session_state[f"limpiar_msg_{emp['id']}"] = False
+            
             with st.expander(f"👤 {emp['nombre']} ({emp['categoria']})"):
                 nueva_mesa_asig = st.selectbox("Asignar a mesa:", [None] + nombres_mesas,
                     index=0 if not emp["mesa_asignada"] else nombres_mesas.index(emp["mesa_asignada"]) + 1,
                     key=f"mesa_asig_{emp['id']}")
                 nuevo_mensaje = st.text_input("Mensaje opcional:", value=emp["mensaje"], key=f"msg_{emp['id']}")
 
-                if nueva_mesa_asig != emp["mesa_asignada"] or nuevo_mensaje != emp["mensaje"]:
-                    emp["mesa_asignada"] = nueva_mesa_asig
+                # Si solo cambió el mensaje
+                if nuevo_mensaje != emp["mensaje"]:
                     emp["mensaje"] = nuevo_mensaje
+                    actualizar_empleado(emp)
+                    st.session_state[f"limpiar_msg_{emp['id']}"] = True
+                    st.rerun()
+
+                # Si solo cambió la mesa asignada
+                elif nueva_mesa_asig != emp["mesa_asignada"]:
+                    emp["mesa_asignada"] = nueva_mesa_asig
                     actualizar_empleado(emp)
                     st.rerun()
 
