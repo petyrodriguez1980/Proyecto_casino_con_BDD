@@ -155,16 +155,26 @@ if rol == "Responsable":
 
     for emp in empleados:
         if not emp["mesa"]:
-            with st.expander(f"👤 {emp['nombre']} ({emp['categoria']})"):
+            open_key = f"exp_open_{emp['id']}"
+            if open_key not in st.session_state:
+                st.session_state[open_key] = False
+
+            with st.expander(f"👤 {emp['nombre']} ({emp['categoria']})", expanded=st.session_state[open_key]):
                 nueva_mesa_asig = st.selectbox("Asignar a mesa:", [None] + nombres_mesas,
                     index=0 if not emp["mesa_asignada"] else nombres_mesas.index(emp["mesa_asignada"]) + 1,
                     key=f"mesa_asig_{emp['id']}")
+                
                 nuevo_mensaje = st.text_input("Mensaje opcional:", value=emp["mensaje"], key=f"msg_{emp['id']}")
+
+                # Marca el expander como abierto si el usuario lo tocó
+                st.session_state[open_key] = True
 
                 if nueva_mesa_asig != emp["mesa_asignada"] or nuevo_mensaje != emp["mensaje"]:
                     emp["mesa_asignada"] = nueva_mesa_asig
                     emp["mensaje"] = nuevo_mensaje
                     actualizar_empleado(emp)
+                    st.session_state[f"msg_{emp['id']}"] = ""  # Limpia el campo
+                    st.session_state[open_key] = False         # Cierra el expander
                     st.rerun()
 
                 if st.button("🛑 Finalizar jornada", key=f"fin_{emp['id']}"):
