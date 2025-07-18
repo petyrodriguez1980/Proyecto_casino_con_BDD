@@ -213,7 +213,7 @@ with st.container():
         with col_asig:
             st.markdown("### 📝 Asignaciones pendientes")
         with col_btn_actualizar:
-            if st.button("ACTUALIZAR"):
+            if st.button("ACTUALIZAR", key="btn_actualizar_general"):
                 st.rerun()
         with col_reloj2:
             mostrar_reloj_js()
