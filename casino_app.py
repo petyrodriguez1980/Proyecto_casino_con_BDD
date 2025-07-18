@@ -203,7 +203,7 @@ if rol == "Responsable":
                     st.rerun()
 
 # ----------- ASIGNACIONES PENDIENTES Y BOTÓN ACTUALIZAR PARA TODOS -----------
-col_asig, col_btn_actualizar, col_reloj = st.columns([6, 6, 1])
+col_asig, col_btn_actualizar, col_reloj = st.columns([6, 6, 2])
 with col_asig:
     st.markdown("### 📝 Asignaciones pendientes")
 with col_reloj:
