@@ -141,9 +141,12 @@ if rol == "Responsable":
                         actualizar_empleado(emp)
                         st.rerun()
                 st.markdown("</div>", unsafe_allow_html=True)
-
+                
+    col_descanso, col_reloj = st.columns([6, 1])
     with col_descanso:
         st.markdown("## 🛋️ Sala de descanso")
+    with col_reloj:
+        mostrar_reloj_js()
 
     if st.button("📦 ASIGNAR empleados a sus mesas"):
         ids_asignados = []
