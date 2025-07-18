@@ -72,26 +72,6 @@ def mostrar_reloj_js():
     """
     components.html(reloj_html, height=80)
 
-# ----------- ASIGNACIONES AUTOREFRESH -----------
-def asignaciones_pendientes_con_autorefresh(empleados):
-    st.markdown("### 📝 Asignaciones pendientes")
-    mostrar_reloj_js()
-    for emp in empleados:
-        if not emp["mesa"] and emp["mesa_asignada"]:
-            mensaje = emp["mensaje"].strip()
-            texto_info = f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**."
-            if mensaje:
-                texto_info += f" Mensaje: {mensaje}"
-            st.info(texto_info)
-
-    components.html("""
-        <script>
-            setTimeout(() => {
-                parent.window.location.reload();
-            }, 10000);
-        </script>
-    """, height=0)
-
 # ----------- INICIALIZACIÓN -----------
 init_db()
 nombres_mesas = ["RA1", "RA2", "RA3", "RA4", "BJ1", "BJ2", "PK1", "iT-PK", "iT-BJ", "TEXAS", "PB", "Mini PB"]
@@ -102,7 +82,7 @@ for emp in empleados:
     if emp["mesa"]:
         mesas[emp["mesa"]].append(emp)
 
-# ----------- VISTA RESPONSABLE -----------
+# ----------- VISTA PARA RESPONSABLE -----------
 if rol == "Responsable":
     if st.session_state.get("limpiar_campos", False):
         st.session_state["nombre_nuevo"] = ""
@@ -155,8 +135,7 @@ if rol == "Responsable":
                         st.rerun()
                 st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("## 🛌️ Sala de descanso")
-
+    st.markdown("## 🛋️ Sala de descanso")
     if st.button("📦 ASIGNAR empleados a sus mesas"):
         ids_asignados = []
         for emp in empleados:
@@ -166,7 +145,6 @@ if rol == "Responsable":
                 emp["mensaje"] = ""
                 actualizar_empleado(emp)
                 ids_asignados.append(emp["id"])
-
         st.session_state["limpiar_mensajes_ids"] = ids_asignados
         st.success("Empleados asignados.")
         st.rerun()
@@ -181,18 +159,15 @@ if rol == "Responsable":
         if not emp["mesa"]:
             with st.expander(f"👤 {emp['nombre']} ({emp['categoria']})"):
                 nueva_mesa_asig = st.selectbox("Asignar a mesa:", [None] + nombres_mesas,
-                                               index=0 if not emp["mesa_asignada"] else nombres_mesas.index(
-                                                   emp["mesa_asignada"]) + 1,
+                                               index=0 if not emp["mesa_asignada"] else nombres_mesas.index(emp["mesa_asignada"]) + 1,
                                                key=f"mesa_asig_{emp['id']}")
                 nuevo_mensaje = st.text_input("Mensaje opcional:", value=emp["mensaje"], key=f"msg_{emp['id']}")
-
                 if nueva_mesa_asig != emp["mesa_asignada"] or nuevo_mensaje != emp["mensaje"]:
                     emp["mesa_asignada"] = nueva_mesa_asig
                     emp["mensaje"] = nuevo_mensaje
                     actualizar_empleado(emp)
                     st.rerun()
-
-                if st.button("🚩 Finalizar jornada", key=f"fin_{emp['id']}"):
+                if st.button("🛑 Finalizar jornada", key=f"fin_{emp['id']}"):
                     mover_a_finalizados(emp)
                     st.rerun()
 
@@ -206,9 +181,17 @@ if rol == "Responsable":
                     st.success(f"{emp['nombre']} fue reincorporado a la sala de descanso.")
                     st.rerun()
 
-# ----------- ASIGNACIONES PENDIENTES (CON AUTOREFRESH SOLO PARA USUARIO) -----------
+# ----------- ASIGNACIONES PENDIENTES CON ACTUALIZACIÓN SUAVE PARA USUARIO -----------
 if rol == "Usuario":
-    asignaciones_pendientes_con_autorefresh(empleados)
+    st.markdown("""
+    <iframe src="/asignaciones_frame" height="200" width="100%" style="border:none;" id="asigFrame"></iframe>
+    <script>
+    setInterval(() => {
+        const frame = document.getElementById("asigFrame");
+        frame.src = "/asignaciones_frame?ts=" + new Date().getTime();
+    }, 10000);
+    </script>
+    """, unsafe_allow_html=True)
 else:
     col_asig, col_btn_actualizar, col_reloj = st.columns([6, 6, 2])
     with col_asig:
@@ -218,11 +201,7 @@ else:
     with col_btn_actualizar:
         if st.button("ACTUALIZAR"):
             st.rerun()
-
     for emp in empleados:
         if not emp["mesa"] and emp["mesa_asignada"]:
-            mensaje = emp["mensaje"].strip()
-            texto_info = f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**."
-            if mensaje:
-                texto_info += f" Mensaje: {mensaje}"
-            st.info(texto_info)
+            st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
+                    (f"Mensaje: {emp['mensaje']}" if emp['mensaje'] else ""))
