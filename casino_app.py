@@ -216,7 +216,7 @@ with st.container():
             if st.button("ACTUALIZAR"):
                 st.rerun()
         with col_reloj2:
-            mostrar_reloj_js("grande")
+            mostrar_reloj_js()
 
         for emp in obtener_empleados():
             if not emp["mesa"] and emp["mesa_asignada"]:
