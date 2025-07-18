@@ -204,27 +204,25 @@ if rol == "Responsable":
 # ----------- ASIGNACIONES PENDIENTES Y BOTÓN ACTUALIZAR PARA TODOS -----------
 import time
 
-# ----------- REFRESCO AUTOMÁTICO DE ASIGNACIONES PENDIENTES -----------
+# ----------- ASIGNACIONES PENDIENTES (CON REFRESCO JAVASCRIPT) -----------
 with st.container():
-    asignaciones_box = st.empty()
+    col_asig, col_btn_actualizar, col_reloj2 = st.columns([5, 1, 1])
+    with col_asig:
+        st.markdown("### 📝 Asignaciones pendientes")
+    with col_btn_actualizar:
+        if st.button("ACTUALIZAR", key="btn_actualizar_general"):
+            st.rerun()
+    with col_reloj2:
+        mostrar_reloj_js()
 
-    def mostrar_asignaciones():
-        col_asig, col_btn_actualizar, col_reloj2 = st.columns([5, 1, 1])
-        with col_asig:
-            st.markdown("### 📝 Asignaciones pendientes")
-        with col_btn_actualizar:
-            if st.button("ACTUALIZAR", key="btn_actualizar_general"):
-                st.rerun()
-        with col_reloj2:
-            mostrar_reloj_js()
+    for emp in obtener_empleados():
+        if not emp["mesa"] and emp["mesa_asignada"]:
+            st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**." +
+                    (f" Mensaje: {emp['mensaje']}" if emp['mensaje'].strip() else ""))
 
-        for emp in obtener_empleados():
-            if not emp["mesa"] and emp["mesa_asignada"]:
-                st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**." +
-                        (f" Mensaje: {emp['mensaje']}" if emp['mensaje'].strip() else ""))
-
-    # Refrescar cada 10 segundos sin perder sesión
-    for _ in range(100):  # Refresca durante ~1000 segundos (más de 15 min)
-        with asignaciones_box:
-            mostrar_asignaciones()
-        time.sleep(10)
+    # JavaScript: auto-refresh cada 10 segundos solo de la página
+    components.html("""
+    <script>
+        setTimeout(() => window.location.reload(), 10000);
+    </script>
+    """, height=0)
