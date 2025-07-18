@@ -4,15 +4,17 @@ import uuid
 import hashlib
 from db_utils import (
     init_db, obtener_empleados, agregar_empleado, actualizar_empleado,
-    mover_a_finalizados, obtener_finalizados, reingresar_empleado
+    mover_a_finalizados, obtener_finalizados
 )
 import os
 
 st.set_page_config(layout="wide")
 
+
 # ----------- AUTENTICACIÓN -----------
 def hash_password(pwd):
     return hashlib.sha256(pwd.encode()).hexdigest()
+
 
 USUARIOS = {
     "responsable": hash_password("admin123"),
@@ -51,6 +53,7 @@ with st.sidebar:
         st.session_state.rol = None
         st.rerun()
 
+
 # ----------- RELOJ JAVASCRIPT -----------
 def mostrar_reloj_js():
     reloj_html = """
@@ -72,6 +75,7 @@ def mostrar_reloj_js():
     """
     components.html(reloj_html, height=80)
 
+
 # ----------- INICIALIZACIÓN -----------
 init_db()
 nombres_mesas = ["RA1", "RA2", "RA3", "RA4", "BJ1", "BJ2", "PK1", "iT-PK", "iT-BJ", "TEXAS", "PB", "Mini PB"]
@@ -84,6 +88,8 @@ for emp in empleados:
 
 # ----------- VISTA PARA RESPONSABLE -----------
 if rol == "Responsable":
+
+    # Limpieza después de agregar
     if st.session_state.get("limpiar_campos", False):
         st.session_state["nombre_nuevo"] = ""
         st.session_state["categoria_nueva"] = "Seleccionar"
@@ -107,10 +113,11 @@ if rol == "Responsable":
                 }
                 agregar_empleado(nuevo)
                 st.session_state["limpiar_campos"] = True
-                st.query_params.update(limpio="1")
+                st.query_params.update(limpio="1")  # ✅ Reemplazo correcto
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
                 st.rerun()
 
+    # Botón reiniciar en línea con área mesas
     col_area, col_reiniciar = st.columns([6, 1])
     with col_area:
         st.markdown("## 🃏 Área de mesas de trabajo")
@@ -136,19 +143,23 @@ if rol == "Responsable":
                 st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("## 🛋️ Sala de descanso")
+
     if st.button("📦 ASIGNAR empleados a sus mesas"):
         ids_asignados = []
         for emp in empleados:
             if not emp["mesa"] and emp["mesa_asignada"]:
                 emp["mesa"] = emp["mesa_asignada"]
                 emp["mesa_asignada"] = None
-                emp["mensaje"] = ""
+                emp["mensaje"] = ""  # 🧹 Limpia el mensaje en la BDD
                 actualizar_empleado(emp)
                 ids_asignados.append(emp["id"])
+
+        # Guardamos los IDs para limpiar sus mensajes después del rerun
         st.session_state["limpiar_mensajes_ids"] = ids_asignados
         st.success("Empleados asignados.")
         st.rerun()
 
+    # Limpieza de mensajes si fue solicitada
     if "limpiar_mensajes_ids" in st.session_state:
         for emp in empleados:
             if emp["id"] in st.session_state["limpiar_mensajes_ids"]:
@@ -159,49 +170,45 @@ if rol == "Responsable":
         if not emp["mesa"]:
             with st.expander(f"👤 {emp['nombre']} ({emp['categoria']})"):
                 nueva_mesa_asig = st.selectbox("Asignar a mesa:", [None] + nombres_mesas,
-                                               index=0 if not emp["mesa_asignada"] else nombres_mesas.index(emp["mesa_asignada"]) + 1,
+                                               index=0 if not emp["mesa_asignada"] else nombres_mesas.index(
+                                                   emp["mesa_asignada"]) + 1,
                                                key=f"mesa_asig_{emp['id']}")
                 nuevo_mensaje = st.text_input("Mensaje opcional:", value=emp["mensaje"], key=f"msg_{emp['id']}")
+
                 if nueva_mesa_asig != emp["mesa_asignada"] or nuevo_mensaje != emp["mensaje"]:
                     emp["mesa_asignada"] = nueva_mesa_asig
                     emp["mensaje"] = nuevo_mensaje
                     actualizar_empleado(emp)
                     st.rerun()
+
                 if st.button("🛑 Finalizar jornada", key=f"fin_{emp['id']}"):
                     mover_a_finalizados(emp)
                     st.rerun()
 
+    # Finalizados solo para responsables en sidebar
     with st.sidebar:
         if finalizados:
             st.markdown("#### ✅ Finalizaron jornada")
             for emp in finalizados:
                 st.markdown(f"**👋 {emp['nombre']} ({emp['categoria']})**")
                 if st.button("🔁 Reingresar", key=f"reing_{emp['id']}"):
+                    from db_utils import reingresar_empleado
+
                     reingresar_empleado(emp)
                     st.success(f"{emp['nombre']} fue reincorporado a la sala de descanso.")
                     st.rerun()
 
-# ----------- ASIGNACIONES PENDIENTES CON ACTUALIZACIÓN SUAVE PARA USUARIO -----------
-if rol == "Usuario":
-    st.markdown("""
-    <iframe src="/asignaciones_frame" height="200" width="100%" style="border:none;" id="asigFrame"></iframe>
-    <script>
-    setInterval(() => {
-        const frame = document.getElementById("asigFrame");
-        frame.src = "/asignaciones_frame?ts=" + new Date().getTime();
-    }, 10000);
-    </script>
-    """, unsafe_allow_html=True)
-else:
-    col_asig, col_btn_actualizar, col_reloj = st.columns([6, 6, 2])
-    with col_asig:
-        st.markdown("### 📝 Asignaciones pendientes")
-    with col_reloj:
-        mostrar_reloj_js()
-    with col_btn_actualizar:
-        if st.button("ACTUALIZAR"):
-            st.rerun()
-    for emp in empleados:
-        if not emp["mesa"] and emp["mesa_asignada"]:
-            st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
-                    (f"Mensaje: {emp['mensaje']}" if emp['mensaje'] else ""))
+# ----------- ASIGNACIONES PENDIENTES Y BOTÓN ACTUALIZAR PARA TODOS -----------
+col_asig, col_btn_actualizar, col_reloj = st.columns([6, 6, 2])
+with col_asig:
+    st.markdown("### 📝 Asignaciones pendientes")
+with col_reloj:
+    mostrar_reloj_js()
+with col_btn_actualizar:
+    if st.button("ACTUALIZAR"):
+        st.rerun()
+
+for emp in empleados:
+    if not emp["mesa"] and emp["mesa_asignada"]:
+        st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
+                (f"Mensaje: {emp['mensaje']} " if emp['mensaje'] else ""))
