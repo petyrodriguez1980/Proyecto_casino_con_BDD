@@ -202,16 +202,27 @@ if rol == "Responsable":
                     st.rerun()
 
 # ----------- ASIGNACIONES PENDIENTES Y BOTÓN ACTUALIZAR PARA TODOS -----------
-col_asig, col_btn_actualizar, col_reloj = st.columns([6, 6, 2])
-with col_asig:
-    st.markdown("### 📝 Asignaciones pendientes")
-with col_reloj:
-        mostrar_reloj_js()
-with col_btn_actualizar:
-    if st.button("ACTUALIZAR"):
-        st.rerun()
+import time
 
-for emp in empleados:
-    if not emp["mesa"] and emp["mesa_asignada"]:
-        st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
-                (f"Mensaje: {emp['mensaje']} " if emp['mensaje'] else ""))
+# Fragmento que se actualiza cada 10 segundos
+@st.experimental_fragment(ttl=10)
+def asignaciones_pendientes_fragment():
+    col_asig, col_btn_actualizar, col_reloj = st.columns([6, 6, 2])
+    with col_asig:
+        st.markdown("### 📝 Asignaciones pendientes")
+    with col_reloj:
+        mostrar_reloj_js()
+    with col_btn_actualizar:
+        if st.button("ACTUALIZAR"):
+            st.rerun()
+
+    empleados_actualizados = obtener_empleados()
+    for emp in empleados_actualizados:
+        if not emp["mesa"] and emp["mesa_asignada"]:
+            st.info(
+                f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
+                (f"Mensaje: {emp['mensaje']} " if emp['mensaje'].strip() else "")
+            )
+
+# Ejecutar fragmento
+asignaciones_pendientes_fragment()
