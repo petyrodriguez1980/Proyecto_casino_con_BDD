@@ -52,20 +52,25 @@ with st.sidebar:
         st.rerun()
 
 # ----------- RELOJ JAVASCRIPT -----------
-def mostrar_reloj_js():
-    reloj_html = """
+def mostrar_reloj_js(estilo="mediano"):
+    size_css = {
+        "grande": "font-size: 40px;",
+        "mediano": "font-size: 28px;",
+        "chico": "font-size: 20px;"
+    }
+    reloj_html = f"""
     <div style="text-align: center">
-        <h3>🕒 <span id="reloj">--:--:--</span></h3>
+        <h3 style='{size_css[estilo]}'>🕒 <span id="reloj">--:--:--</span></h3>
     </div>
     <script>
     const reloj = document.getElementById("reloj");
-    function actualizarHora() {
+    function actualizarHora() {{
         const ahora = new Date();
         const horas = String(ahora.getHours()).padStart(2, '0');
         const minutos = String(ahora.getMinutes()).padStart(2, '0');
         const segundos = String(ahora.getSeconds()).padStart(2, '0');
-        reloj.textContent = `${horas}:${minutos}:${segundos}`;
-    }
+        reloj.textContent = `${{horas}}:${{minutos}}:${{segundos}}`;
+    }}
     setInterval(actualizarHora, 1000);
     actualizarHora();
     </script>
@@ -80,7 +85,7 @@ finalizados = obtener_finalizados()
 mesas = {nombre: [] for nombre in nombres_mesas}
 for emp in empleados:
     if emp["mesa"]:
-        mesas[emp["mesa"]].append(emp)
+        mesas[emp["mesa"].strip()].append(emp)
 
 # ----------- VISTA PARA RESPONSABLE -----------
 if rol == "Responsable":
@@ -114,15 +119,11 @@ if rol == "Responsable":
                 st.rerun()
 
     # Botón reiniciar en línea con área mesas
-    col_area, col_reiniciar = st.columns([6, 1])
+    col_area, col_reloj = st.columns([5, 2])
     with col_area:
         st.markdown("## 🃏 Área de mesas de trabajo")
-    with col_reiniciar:
-        if st.button("🔄 Reiniciar Jornada"):
-            if os.path.exists("casino.db"):
-                os.remove("casino.db")
-            st.success("Base de datos reiniciada.")
-            st.rerun()
+    with col_reloj:
+        mostrar_reloj_js("grande")
 
     col_mesas = st.columns(4)
     for i, (nombre_mesa, empleados_mesa) in enumerate(mesas.items()):
@@ -138,11 +139,7 @@ if rol == "Responsable":
                         st.rerun()
                 st.markdown("</div>", unsafe_allow_html=True)
 
-    col_descanso, col_reloj = st.columns([6, 1])
-    with col_descanso:
-        st.markdown("## 🛋️ Sala de descanso")
-    with col_reloj:
-        mostrar_reloj_js()
+    st.markdown("## 🛋️ Sala de descanso")
 
     if st.button("📦 ASIGNAR empleados a sus mesas"):
         ids_asignados = []
@@ -153,12 +150,11 @@ if rol == "Responsable":
                 emp["mensaje"] = ""  # 🧹 Limpia el mensaje en la BDD
                 actualizar_empleado(emp)
                 ids_asignados.append(emp["id"])
-                
+
         # Guardamos los IDs para limpiar sus mensajes después del rerun
         st.session_state["limpiar_mensajes_ids"] = ids_asignados
         st.success("Empleados asignados.")
         st.rerun()
-
 
     # Limpieza de mensajes si fue solicitada
     if "limpiar_mensajes_ids" in st.session_state:
@@ -166,7 +162,6 @@ if rol == "Responsable":
             if emp["id"] in st.session_state["limpiar_mensajes_ids"]:
                 st.session_state[f"msg_{emp['id']}"] = ""
         del st.session_state["limpiar_mensajes_ids"]
-
 
     for emp in empleados:
         if not emp["mesa"]:
@@ -199,14 +194,16 @@ if rol == "Responsable":
                     st.rerun()
 
 # ----------- ASIGNACIONES PENDIENTES Y BOTÓN ACTUALIZAR PARA TODOS -----------
-col_asig, col_btn_actualizar = st.columns([6, 1])
+col_asig, col_btn_actualizar, col_reloj2 = st.columns([5, 1, 1])
 with col_asig:
     st.markdown("### 📝 Asignaciones pendientes")
 with col_btn_actualizar:
     if st.button("ACTUALIZAR"):
         st.rerun()
+with col_reloj2:
+    mostrar_reloj_js("grande")
 
 for emp in empleados:
     if not emp["mesa"] and emp["mesa_asignada"]:
-        st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
-                (f"Mensaje: {emp['mensaje']} " if emp['mensaje'] else ""))
+        st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**." +
+                (f" Mensaje: {emp['mensaje']}" if emp['mensaje'].strip() else ""))
