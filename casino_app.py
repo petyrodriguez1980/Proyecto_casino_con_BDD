@@ -7,7 +7,6 @@ from db_utils import (
     mover_a_finalizados, obtener_finalizados
 )
 import os
-from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(layout="wide")
 
@@ -199,15 +198,10 @@ if rol == "Responsable":
                     st.success(f"{emp['nombre']} fue reincorporado a la sala de descanso.")
                     st.rerun()
 
-# ----------- ASIGNACIONES PENDIENTES CON AUTOREFRESH SOLO PARA USUARIOS -----------
+# ----------- ASIGNACIONES PENDIENTES Y BOTÓN ACTUALIZAR PARA TODOS -----------
 col_asig, col_btn_actualizar = st.columns([6, 1])
 with col_asig:
     st.markdown("### 📝 Asignaciones pendientes")
-
-    # 🔄 Auto-refresh cada 5s SOLO para el rol Usuario
-    if rol == "Usuario":
-        st_autorefresh(interval=5000, key="refresh_user")
-
 with col_btn_actualizar:
     if st.button("ACTUALIZAR"):
         st.rerun()
