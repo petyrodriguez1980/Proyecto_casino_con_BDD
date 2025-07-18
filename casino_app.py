@@ -117,7 +117,6 @@ if rol == "Responsable":
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
                 st.rerun()
 
-    
     # Botón reiniciar en línea con área mesas
     col_area, col_reiniciar = st.columns([6, 1])
     with col_area:
@@ -142,11 +141,9 @@ if rol == "Responsable":
                         actualizar_empleado(emp)
                         st.rerun()
                 st.markdown("</div>", unsafe_allow_html=True)
-                
-    
+
     st.markdown("## 🛋️ Sala de descanso")
 
-    
     if st.button("📦 ASIGNAR empleados a sus mesas"):
         ids_asignados = []
         for emp in empleados:
@@ -202,27 +199,16 @@ if rol == "Responsable":
                     st.rerun()
 
 # ----------- ASIGNACIONES PENDIENTES Y BOTÓN ACTUALIZAR PARA TODOS -----------
-import time
+col_asig, col_btn_actualizar, col_reloj = st.columns([6, 6, 2])
+with col_asig:
+    st.markdown("### 📝 Asignaciones pendientes")
+with col_reloj:
+    mostrar_reloj_js()
+with col_btn_actualizar:
+    if st.button("ACTUALIZAR"):
+        st.rerun()
 
-# ----------- ASIGNACIONES PENDIENTES (CON REFRESCO JAVASCRIPT) -----------
-with st.container():
-    col_asig, col_btn_actualizar, col_reloj2 = st.columns([5, 1, 1])
-    with col_asig:
-        st.markdown("### 📝 Asignaciones pendientes")
-    with col_btn_actualizar:
-        if st.button("ACTUALIZAR", key="btn_actualizar_general"):
-            st.rerun()
-    with col_reloj2:
-        mostrar_reloj_js()
-
-    for emp in obtener_empleados():
-        if not emp["mesa"] and emp["mesa_asignada"]:
-            st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**." +
-                    (f" Mensaje: {emp['mensaje']}" if emp['mensaje'].strip() else ""))
-
-    # JavaScript: auto-refresh cada 10 segundos solo de la página
-    components.html("""
-    <script>
-        setTimeout(() => window.location.reload(), 10000);
-    </script>
-    """, height=0)
+for emp in empleados:
+    if not emp["mesa"] and emp["mesa_asignada"]:
+        st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
+                (f"Mensaje: {emp['mensaje']} " if emp['mensaje'] else ""))
