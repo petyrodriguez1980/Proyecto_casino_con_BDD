@@ -54,7 +54,7 @@ with st.sidebar:
 # ----------- RELOJ JAVASCRIPT -----------
 def mostrar_reloj_js():
     reloj_html = """
-    <div style="text-align: center; font-size: 25px; position: absolute; top: 10px; left: 20px">
+    <div style="text-align: center; font-size: 25px; position: absolute; top: 0px; left: 20px">
         <h3>🕒 <span id="reloj">--:--:--</span></h3>
     </div>
     <script>
