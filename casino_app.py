@@ -44,12 +44,6 @@ if not st.session_state.autenticado:
 
 rol = st.session_state.rol
 
-# ----------- AUTO REFRESH PARA USUARIOS ----------- 
-if rol == "Usuario":
-    st.markdown("""
-        <meta http-equiv="refresh" content="5">
-    """, unsafe_allow_html=True)
-
 # Botón cerrar sesión
 with st.sidebar:
     if st.button("🔓 Cerrar sesión"):
