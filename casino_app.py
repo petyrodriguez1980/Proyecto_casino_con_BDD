@@ -142,7 +142,7 @@ if rol == "Responsable":
                         st.rerun()
                 st.markdown("</div>", unsafe_allow_html=True)
 
-    col_descanso, col_reloj = st.columns([6])
+    col_descanso = st.columns([6])
     with col_descanso:
         st.markdown("## 🛋️ Sala de descanso")
 
