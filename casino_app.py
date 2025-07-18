@@ -10,9 +10,11 @@ import os
 
 st.set_page_config(layout="wide")
 
+
 # ----------- AUTENTICACIÓN -----------
 def hash_password(pwd):
     return hashlib.sha256(pwd.encode()).hexdigest()
+
 
 USUARIOS = {
     "responsable": hash_password("admin123"),
@@ -51,31 +53,28 @@ with st.sidebar:
         st.session_state.rol = None
         st.rerun()
 
+
 # ----------- RELOJ JAVASCRIPT -----------
-def mostrar_reloj_js(estilo="mediano"):
-    size_css = {
-        "grande": "font-size: 40px;",
-        "mediano": "font-size: 28px;",
-        "chico": "font-size: 20px;"
-    }
-    reloj_html = f"""
-    <div style="text-align: center">
-        <h3 style='{size_css[estilo]}'>🕒 <span id="reloj">--:--:--</span></h3>
+def mostrar_reloj_js():
+    reloj_html = """
+    <div style="text-align: center;">
+        <h3>🕒 <span id="reloj">--:--:--</span></h3>
     </div>
     <script>
     const reloj = document.getElementById("reloj");
-    function actualizarHora() {{
+    function actualizarHora() {
         const ahora = new Date();
         const horas = String(ahora.getHours()).padStart(2, '0');
         const minutos = String(ahora.getMinutes()).padStart(2, '0');
         const segundos = String(ahora.getSeconds()).padStart(2, '0');
-        reloj.textContent = `${{horas}}:${{minutos}}:${{segundos}}`;
-    }}
+        reloj.textContent = `${horas}:${minutos}:${segundos}`;
+    }
     setInterval(actualizarHora, 1000);
     actualizarHora();
     </script>
     """
     components.html(reloj_html, height=80)
+
 
 # ----------- INICIALIZACIÓN -----------
 init_db()
@@ -85,7 +84,7 @@ finalizados = obtener_finalizados()
 mesas = {nombre: [] for nombre in nombres_mesas}
 for emp in empleados:
     if emp["mesa"]:
-        mesas[emp["mesa"].strip()].append(emp)
+        mesas[emp["mesa"]].append(emp)
 
 # ----------- VISTA PARA RESPONSABLE -----------
 if rol == "Responsable":
@@ -119,11 +118,15 @@ if rol == "Responsable":
                 st.rerun()
 
     # Botón reiniciar en línea con área mesas
-    col_area, col_reloj = st.columns([5, 2])
+    col_area, col_reiniciar = st.columns([6, 1])
     with col_area:
         st.markdown("## 🃏 Área de mesas de trabajo")
-    with col_reloj:
-        mostrar_reloj_js("grande")
+    with col_reiniciar:
+        if st.button("🔄 Reiniciar Jornada"):
+            if os.path.exists("casino.db"):
+                os.remove("casino.db")
+            st.success("Base de datos reiniciada.")
+            st.rerun()
 
     col_mesas = st.columns(4)
     for i, (nombre_mesa, empleados_mesa) in enumerate(mesas.items()):
@@ -139,7 +142,11 @@ if rol == "Responsable":
                         st.rerun()
                 st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("## 🛋️ Sala de descanso")
+    col_descanso, col_reloj = st.columns([6, 1])
+    with col_descanso:
+        st.markdown("## 🛋️ Sala de descanso")
+    with col_reloj:
+        mostrar_reloj_js()
 
     if st.button("📦 ASIGNAR empleados a sus mesas"):
         ids_asignados = []
@@ -167,8 +174,9 @@ if rol == "Responsable":
         if not emp["mesa"]:
             with st.expander(f"👤 {emp['nombre']} ({emp['categoria']})"):
                 nueva_mesa_asig = st.selectbox("Asignar a mesa:", [None] + nombres_mesas,
-                    index=0 if not emp["mesa_asignada"] else nombres_mesas.index(emp["mesa_asignada"]) + 1,
-                    key=f"mesa_asig_{emp['id']}")
+                                               index=0 if not emp["mesa_asignada"] else nombres_mesas.index(
+                                                   emp["mesa_asignada"]) + 1,
+                                               key=f"mesa_asig_{emp['id']}")
                 nuevo_mensaje = st.text_input("Mensaje opcional:", value=emp["mensaje"], key=f"msg_{emp['id']}")
 
                 if nueva_mesa_asig != emp["mesa_asignada"] or nuevo_mensaje != emp["mensaje"]:
@@ -189,21 +197,20 @@ if rol == "Responsable":
                 st.markdown(f"**👋 {emp['nombre']} ({emp['categoria']})**")
                 if st.button("🔁 Reingresar", key=f"reing_{emp['id']}"):
                     from db_utils import reingresar_empleado
+
                     reingresar_empleado(emp)
                     st.success(f"{emp['nombre']} fue reincorporado a la sala de descanso.")
                     st.rerun()
 
 # ----------- ASIGNACIONES PENDIENTES Y BOTÓN ACTUALIZAR PARA TODOS -----------
-col_asig, col_btn_actualizar, col_reloj2 = st.columns([5, 1, 1])
+col_asig, col_btn_actualizar = st.columns([6, 1])
 with col_asig:
     st.markdown("### 📝 Asignaciones pendientes")
 with col_btn_actualizar:
     if st.button("ACTUALIZAR"):
         st.rerun()
-with col_reloj2:
-    mostrar_reloj_js("grande")
 
 for emp in empleados:
     if not emp["mesa"] and emp["mesa_asignada"]:
-        st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**." +
-                (f" Mensaje: {emp['mensaje']}" if emp['mensaje'].strip() else ""))
+        st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
+                (f"Mensaje: {emp['mensaje']} " if emp['mensaje'] else ""))
