@@ -117,6 +117,13 @@ if rol == "Responsable":
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
                 st.rerun()
 
+
+    # Reloj centrado arriba del área de mesas
+    st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
+    mostrar_reloj_js()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    
     # Botón reiniciar en línea con área mesas
     col_area, col_reiniciar = st.columns([6, 1])
     with col_area:
@@ -142,12 +149,10 @@ if rol == "Responsable":
                         st.rerun()
                 st.markdown("</div>", unsafe_allow_html=True)
                 
-    col_descanso, col_reloj = st.columns([6, 1])
-    with col_descanso:
-        st.markdown("## 🛋️ Sala de descanso")
-    with col_reloj:
-        mostrar_reloj_js()
+    
+    st.markdown("## 🛋️ Sala de descanso")
 
+    
     if st.button("📦 ASIGNAR empleados a sus mesas"):
         ids_asignados = []
         for emp in empleados:
