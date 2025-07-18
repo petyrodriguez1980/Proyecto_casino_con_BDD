@@ -4,17 +4,15 @@ import uuid
 import hashlib
 from db_utils import (
     init_db, obtener_empleados, agregar_empleado, actualizar_empleado,
-    mover_a_finalizados, obtener_finalizados
+    mover_a_finalizados, obtener_finalizados, reingresar_empleado
 )
 import os
 
 st.set_page_config(layout="wide")
 
-
 # ----------- AUTENTICACIÓN -----------
 def hash_password(pwd):
     return hashlib.sha256(pwd.encode()).hexdigest()
-
 
 USUARIOS = {
     "responsable": hash_password("admin123"),
@@ -53,7 +51,6 @@ with st.sidebar:
         st.session_state.rol = None
         st.rerun()
 
-
 # ----------- RELOJ JAVASCRIPT -----------
 def mostrar_reloj_js():
     reloj_html = """
@@ -75,6 +72,25 @@ def mostrar_reloj_js():
     """
     components.html(reloj_html, height=80)
 
+# ----------- ASIGNACIONES AUTOREFRESH -----------
+def asignaciones_pendientes_con_autorefresh(empleados):
+    st.markdown("### 📝 Asignaciones pendientes")
+    mostrar_reloj_js()
+    for emp in empleados:
+        if not emp["mesa"] and emp["mesa_asignada"]:
+            mensaje = emp["mensaje"].strip()
+            texto_info = f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**."
+            if mensaje:
+                texto_info += f" Mensaje: {mensaje}"
+            st.info(texto_info)
+
+    components.html("""
+        <script>
+            setTimeout(() => {
+                parent.window.location.reload();
+            }, 10000);
+        </script>
+    """, height=0)
 
 # ----------- INICIALIZACIÓN -----------
 init_db()
@@ -86,10 +102,8 @@ for emp in empleados:
     if emp["mesa"]:
         mesas[emp["mesa"]].append(emp)
 
-# ----------- VISTA PARA RESPONSABLE -----------
+# ----------- VISTA RESPONSABLE -----------
 if rol == "Responsable":
-
-    # Limpieza después de agregar
     if st.session_state.get("limpiar_campos", False):
         st.session_state["nombre_nuevo"] = ""
         st.session_state["categoria_nueva"] = "Seleccionar"
@@ -113,11 +127,10 @@ if rol == "Responsable":
                 }
                 agregar_empleado(nuevo)
                 st.session_state["limpiar_campos"] = True
-                st.query_params.update(limpio="1")  # ✅ Reemplazo correcto
+                st.query_params.update(limpio="1")
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
                 st.rerun()
 
-    # Botón reiniciar en línea con área mesas
     col_area, col_reiniciar = st.columns([6, 1])
     with col_area:
         st.markdown("## 🃏 Área de mesas de trabajo")
@@ -142,7 +155,7 @@ if rol == "Responsable":
                         st.rerun()
                 st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("## 🛋️ Sala de descanso")
+    st.markdown("## 🛌️ Sala de descanso")
 
     if st.button("📦 ASIGNAR empleados a sus mesas"):
         ids_asignados = []
@@ -150,16 +163,14 @@ if rol == "Responsable":
             if not emp["mesa"] and emp["mesa_asignada"]:
                 emp["mesa"] = emp["mesa_asignada"]
                 emp["mesa_asignada"] = None
-                emp["mensaje"] = ""  # 🧹 Limpia el mensaje en la BDD
+                emp["mensaje"] = ""
                 actualizar_empleado(emp)
                 ids_asignados.append(emp["id"])
 
-        # Guardamos los IDs para limpiar sus mensajes después del rerun
         st.session_state["limpiar_mensajes_ids"] = ids_asignados
         st.success("Empleados asignados.")
         st.rerun()
 
-    # Limpieza de mensajes si fue solicitada
     if "limpiar_mensajes_ids" in st.session_state:
         for emp in empleados:
             if emp["id"] in st.session_state["limpiar_mensajes_ids"]:
@@ -181,34 +192,37 @@ if rol == "Responsable":
                     actualizar_empleado(emp)
                     st.rerun()
 
-                if st.button("🛑 Finalizar jornada", key=f"fin_{emp['id']}"):
+                if st.button("🚩 Finalizar jornada", key=f"fin_{emp['id']}"):
                     mover_a_finalizados(emp)
                     st.rerun()
 
-    # Finalizados solo para responsables en sidebar
     with st.sidebar:
         if finalizados:
             st.markdown("#### ✅ Finalizaron jornada")
             for emp in finalizados:
                 st.markdown(f"**👋 {emp['nombre']} ({emp['categoria']})**")
                 if st.button("🔁 Reingresar", key=f"reing_{emp['id']}"):
-                    from db_utils import reingresar_empleado
-
                     reingresar_empleado(emp)
                     st.success(f"{emp['nombre']} fue reincorporado a la sala de descanso.")
                     st.rerun()
 
-# ----------- ASIGNACIONES PENDIENTES Y BOTÓN ACTUALIZAR PARA TODOS -----------
-col_asig, col_btn_actualizar, col_reloj = st.columns([6, 6, 2])
-with col_asig:
-    st.markdown("### 📝 Asignaciones pendientes")
-with col_reloj:
-    mostrar_reloj_js()
-with col_btn_actualizar:
-    if st.button("ACTUALIZAR"):
-        st.rerun()
+# ----------- ASIGNACIONES PENDIENTES (CON AUTOREFRESH SOLO PARA USUARIO) -----------
+if rol == "Usuario":
+    asignaciones_pendientes_con_autorefresh(empleados)
+else:
+    col_asig, col_btn_actualizar, col_reloj = st.columns([6, 6, 2])
+    with col_asig:
+        st.markdown("### 📝 Asignaciones pendientes")
+    with col_reloj:
+        mostrar_reloj_js()
+    with col_btn_actualizar:
+        if st.button("ACTUALIZAR"):
+            st.rerun()
 
-for emp in empleados:
-    if not emp["mesa"] and emp["mesa_asignada"]:
-        st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
-                (f"Mensaje: {emp['mensaje']} " if emp['mensaje'] else ""))
+    for emp in empleados:
+        if not emp["mesa"] and emp["mesa_asignada"]:
+            mensaje = emp["mensaje"].strip()
+            texto_info = f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**."
+            if mensaje:
+                texto_info += f" Mensaje: {mensaje}"
+            st.info(texto_info)
