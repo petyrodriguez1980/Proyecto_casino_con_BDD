@@ -25,6 +25,16 @@ def init_db():
                     categoria TEXT
                 )
             """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS movimientos (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nombre TEXT,
+                    categoria TEXT,
+                    accion TEXT,
+                    destino TEXT,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
             conn.commit()
 
 def agregar_empleado(empleado):
@@ -101,16 +111,6 @@ def registrar_movimiento(nombre, categoria, accion, destino):
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS movimientos (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nombre TEXT,
-                categoria TEXT,
-                accion TEXT,
-                destino TEXT,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        cursor.execute("""
             INSERT INTO movimientos (nombre, categoria, accion, destino)
             VALUES (?, ?, ?, ?)
         """, (nombre, categoria, accion, destino))
@@ -122,8 +122,6 @@ def obtener_movimientos():
 
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
-
-        # Verificamos si la tabla existe antes de hacer SELECT
         cursor.execute("""
             SELECT name FROM sqlite_master WHERE type='table' AND name='movimientos';
         """)
