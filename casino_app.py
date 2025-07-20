@@ -135,26 +135,34 @@ if rol == "Responsable":
                 <h4 style='text-align: center;'>🃏 {nombre_mesa}</h4>""", unsafe_allow_html=True)
                 
                 for emp in empleados_mesa:
-                    expander_key = f"expander_{emp['id']}"
-                    if expander_key not in st.session_state:
-                        st.session_state[expander_key] = False  # Por defecto cerrado
+                    emp_id = str(emp.get("id") or uuid.uuid4())
+                    expander_key = f"expander_{emp_id}"
                     
-                    with st.expander(f"👤 {emp['nombre']} ({emp['categoria']})", expanded=st.session_state[expander_key], key=expander_key):
-                        nueva_opcion = st.selectbox("Selecciona destino", opciones_envio, key=f"enviar_a_{emp['id']}")
-                        if st.button("Confirmar", key=f"confirmar_envio_{emp['id']}"):
+                    if expander_key not in st.session_state:
+                        st.session_state[expander_key] = False
+                    
+                    nombre = emp.get("nombre") or "Sin nombre"
+                    categoria = emp.get("categoria") or "Sin categoría"
+                    titulo_expander = f"👤 {nombre} ({categoria})"
+                    
+                    st.write(f"DEBUG: Expander key = {expander_key}, título = {titulo_expander}")  # Para debug, puedes eliminar después
+                    
+                    with st.expander(titulo_expander, expanded=st.session_state[expander_key], key=expander_key):
+                        nueva_opcion = st.selectbox("Selecciona destino", opciones_envio, key=f"enviar_a_{emp_id}")
+                        if st.button("Confirmar", key=f"confirmar_envio_{emp_id}"):
                             if nueva_opcion == "Sala de descanso":
-                                registrar_movimiento(emp["nombre"], emp["categoria"], "Liberado", "Sala de descanso")
+                                registrar_movimiento(nombre, categoria, "Liberado", "Sala de descanso")
                                 emp["mesa"] = None
                                 actualizar_empleado(emp)
                             elif nueva_opcion == "Finalizar jornada":
-                                registrar_movimiento(emp["nombre"], emp["categoria"], "Finalizó", "-")
+                                registrar_movimiento(nombre, categoria, "Finalizó", "-")
                                 mover_a_finalizados(emp)
                             else:
-                                registrar_movimiento(emp["nombre"], emp["categoria"], "Asignado", nueva_opcion)
+                                registrar_movimiento(nombre, categoria, "Asignado", nueva_opcion)
                                 emp["mesa"] = nueva_opcion
                                 actualizar_empleado(emp)
                             
-                            st.session_state[expander_key] = False  # Cierra el expander al confirmar
+                            st.session_state[expander_key] = False
                             st.rerun()
                 
                 st.markdown("</div>", unsafe_allow_html=True)
