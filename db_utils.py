@@ -115,3 +115,11 @@ def registrar_movimiento(nombre, categoria, accion, destino):
             VALUES (?, ?, ?, ?)
         """, (nombre, categoria, accion, destino))
         conn.commit()
+
+def obtener_movimientos():
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT nombre, categoria, accion, destino, timestamp FROM movimientos ORDER BY timestamp DESC")
+        filas = cursor.fetchall()
+        columnas = [col[0] for col in cursor.description]
+        return [dict(zip(columnas, fila)) for fila in filas]
