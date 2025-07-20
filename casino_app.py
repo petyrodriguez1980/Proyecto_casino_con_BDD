@@ -135,7 +135,11 @@ if rol == "Responsable":
                 for emp in empleados_mesa:
                     st.markdown(f"- 👤 {emp['nombre']} ({emp['categoria']})")
 
-                    with st.expander("Enviar a:", expanded=False):
+                    expanded_key = f"expander_abierto_{emp['id']}"
+                    if expanded_key not in st.session_state:
+                        st.session_state[expanded_key] = False
+
+                    with st.expander("Enviar a:", expanded=st.session_state[expanded_key]):
                         nueva_opcion = st.selectbox("Selecciona destino", opciones_envio, key=f"enviar_a_{emp['id']}")
                         if st.button("Confirmar", key=f"confirmar_envio_{emp['id']}"):
                             if nueva_opcion == "Sala de descanso":
@@ -149,6 +153,7 @@ if rol == "Responsable":
                                 registrar_movimiento(emp["nombre"], emp["categoria"], "Asignado", nueva_opcion)
                                 emp["mesa"] = nueva_opcion
                                 actualizar_empleado(emp)
+                            st.session_state[expanded_key] = False  # Cierra el desplegable
                             st.rerun()
 
                 st.markdown("</div>", unsafe_allow_html=True)
