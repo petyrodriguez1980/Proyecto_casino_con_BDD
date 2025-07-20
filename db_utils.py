@@ -1,5 +1,4 @@
 import sqlite3
-from datetime import datetime
 import os
 
 DB_PATH = "casino.db"
@@ -97,40 +96,3 @@ def reingresar_empleado(emp):
             ""     # mensaje
         ))
         conn.commit()
-
-def registrar_movimiento(empleado_id, nombre, categoria, accion, destino=None):
-    conn = sqlite3.connect("casino.db")
-    c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS movimientos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            empleado_id TEXT,
-            nombre TEXT,
-            categoria TEXT,
-            accion TEXT,
-            destino TEXT,
-            timestamp DATETIME
-        )
-    """)
-    c.execute("""
-        INSERT INTO movimientos (empleado_id, nombre, categoria, accion, destino, timestamp)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (empleado_id, nombre, categoria, accion, destino, datetime.now()))
-    conn.commit()
-    conn.close()
-
-# Ejemplo de uso en tu app:
-# registrar_movimiento(emp['id'], emp['nombre'], emp['categoria'], "Asignado a mesa", emp['mesa'])
-# registrar_movimiento(emp['id'], emp['nombre'], emp['categoria'], "Finalizó jornada")
-# registrar_movimiento(emp['id'], emp['nombre'], emp['categoria'], "Liberado de mesa", emp['mesa'])
-# registrar_movimiento(emp['id'], emp['nombre'], emp['categoria'], "Reingresado a sala de descanso")
-
-# Función para consultar movimientos
-
-def obtener_movimientos():
-    conn = sqlite3.connect("casino.db")
-    c = conn.cursor()
-    c.execute("SELECT nombre, categoria, accion, destino, timestamp FROM movimientos ORDER BY timestamp DESC")
-    movimientos = c.fetchall()
-    conn.close()
-    return movimientos
