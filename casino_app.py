@@ -4,21 +4,15 @@ import uuid
 import hashlib
 from db_utils import (
     init_db, obtener_empleados, agregar_empleado, actualizar_empleado,
-    mover_a_finalizados, obtener_finalizados
-)
-import os
-from db_utils import (
-    init_db, obtener_empleados, agregar_empleado, actualizar_empleado,
     mover_a_finalizados, obtener_finalizados, registrar_movimiento
 )
+import os
 
 st.set_page_config(layout="wide")
-
 
 # ----------- AUTENTICACIÓN -----------
 def hash_password(pwd):
     return hashlib.sha256(pwd.encode()).hexdigest()
-
 
 USUARIOS = {
     "responsable": hash_password("admin123"),
@@ -57,7 +51,6 @@ with st.sidebar:
         st.session_state.rol = None
         st.rerun()
 
-
 # ----------- RELOJ JAVASCRIPT -----------
 def mostrar_reloj_js():
     reloj_html = """
@@ -79,21 +72,22 @@ def mostrar_reloj_js():
     """
     components.html(reloj_html, height=80)
 
-
 # ----------- INICIALIZACIÓN -----------
 init_db()
 nombres_mesas = ["RA1", "RA2", "RA3", "RA4", "BJ1", "BJ2", "PK1", "iT-PK", "iT-BJ", "TEXAS", "PB", "Mini PB"]
+
+opciones_envio = nombres_mesas + ["Sala de descanso", "Finalizar jornada"]
+
 empleados = obtener_empleados()
 finalizados = obtener_finalizados()
 mesas = {nombre: [] for nombre in nombres_mesas}
 for emp in empleados:
     if emp["mesa"]:
-        mesas[emp["mesa"]].append(emp)
+        mesas[emp["mesa"].strip()].append(emp)
 
 # ----------- VISTA PARA RESPONSABLE -----------
 if rol == "Responsable":
 
-    # Limpieza después de agregar
     if st.session_state.get("limpiar_campos", False):
         st.session_state["nombre_nuevo"] = ""
         st.session_state["categoria_nueva"] = "Seleccionar"
@@ -118,11 +112,10 @@ if rol == "Responsable":
                 }
                 agregar_empleado(nuevo)
                 st.session_state["limpiar_campos"] = True
-                st.query_params.update(limpio="1")  # ✅ Reemplazo correcto
+                st.query_params.update(limpio="1")
                 st.success(f"{nombre_nuevo} agregado a sala de descanso.")
                 st.rerun()
 
-    # Botón reiniciar en línea con área mesas
     col_area, col_reiniciar = st.columns([6, 1])
     with col_area:
         st.markdown("## 🃏 Área de mesas de trabajo")
@@ -141,11 +134,23 @@ if rol == "Responsable":
                     <h4 style='text-align: center;'>🃏 {nombre_mesa}</h4>""", unsafe_allow_html=True)
                 for emp in empleados_mesa:
                     st.markdown(f"- 👤 {emp['nombre']} ({emp['categoria']})")
-                    if st.button(f"❌ Liberar", key=f"lib_{emp['id']}"):
-                        registrar_movimiento(emp["nombre"], emp["categoria"], "Liberado", "Sala de descanso")
-                        emp["mesa"] = None
-                        actualizar_empleado(emp)
-                        st.rerun()
+
+                    with st.expander("Enviar a:", expanded=False):
+                        nueva_opcion = st.selectbox("Selecciona destino", opciones_envio, key=f"enviar_a_{emp['id']}")
+                        if st.button("Confirmar", key=f"confirmar_envio_{emp['id']}"):
+                            if nueva_opcion == "Sala de descanso":
+                                registrar_movimiento(emp["nombre"], emp["categoria"], "Liberado", "Sala de descanso")
+                                emp["mesa"] = None
+                                actualizar_empleado(emp)
+                            elif nueva_opcion == "Finalizar jornada":
+                                registrar_movimiento(emp["nombre"], emp["categoria"], "Finalizó", "-")
+                                mover_a_finalizados(emp)
+                            else:
+                                registrar_movimiento(emp["nombre"], emp["categoria"], "Asignado", nueva_opcion)
+                                emp["mesa"] = nueva_opcion
+                                actualizar_empleado(emp)
+                            st.rerun()
+
                 st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("## 🛋️ Sala de descanso")
@@ -157,16 +162,14 @@ if rol == "Responsable":
                 registrar_movimiento(emp["nombre"], emp["categoria"], "Asignado", emp["mesa_asignada"])
                 emp["mesa"] = emp["mesa_asignada"]
                 emp["mesa_asignada"] = None
-                emp["mensaje"] = ""  # 🧹 Limpia el mensaje en la BDD
+                emp["mensaje"] = ""
                 actualizar_empleado(emp)
                 ids_asignados.append(emp["id"])
 
-        # Guardamos los IDs para limpiar sus mensajes después del rerun
         st.session_state["limpiar_mensajes_ids"] = ids_asignados
         st.success("Empleados asignados.")
         st.rerun()
 
-    # Limpieza de mensajes si fue solicitada
     if "limpiar_mensajes_ids" in st.session_state:
         for emp in empleados:
             if emp["id"] in st.session_state["limpiar_mensajes_ids"]:
@@ -193,7 +196,6 @@ if rol == "Responsable":
                     mover_a_finalizados(emp)
                     st.rerun()
 
-    # Finalizados solo para responsables en sidebar
     with st.sidebar:
         if finalizados:
             st.markdown("#### ✅ Finalizaron jornada")
@@ -202,12 +204,10 @@ if rol == "Responsable":
                 if st.button("🔁 Reingresar", key=f"reing_{emp['id']}"):
                     registrar_movimiento(emp["nombre"], emp["categoria"], "Reingresó", "Sala de descanso")
                     from db_utils import reingresar_empleado
-
                     reingresar_empleado(emp)
                     st.success(f"{emp['nombre']} fue reincorporado a la sala de descanso.")
                     st.rerun()
 
-# ----------- ASIGNACIONES PENDIENTES Y BOTÓN ACTUALIZAR PARA TODOS -----------
 col_asig, col_btn_actualizar, col_reloj = st.columns([6, 6, 2])
 with col_asig:
     st.markdown("### 📝 Asignaciones pendientes")
@@ -222,8 +222,6 @@ for emp in empleados:
         st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
                 (f"Mensaje: {emp['mensaje']} " if emp['mensaje'] else ""))
 
-
-# ----------- SECCIÓN VISUAL PARA CONSULTAR HISTORIAL DE MOVIMIENTOS -----------
 from db_utils import obtener_movimientos
 
 if rol == "Responsable":
@@ -241,17 +239,16 @@ if rol == "Responsable":
         df_mov["timestamp"] = pd.to_datetime(df_mov["timestamp"])
         df_mov = df_mov.sort_values("timestamp", ascending=False)
 
-        # Filtros
         col1, col2 = st.columns(2)
-        
+
         nombres_unicos = sorted(df_mov["nombre"].dropna().unique())
-        
+
         with col1:
             filtro_nombre = st.selectbox("Filtrar por nombre", ["Todos"] + nombres_unicos)
-        
+
         with col2:
             filtro_accion = st.selectbox("Filtrar por acción", ["Todas"] + sorted(df_mov["accion"].dropna().unique()))
-        
+
         if filtro_nombre != "Todos":
             df_mov = df_mov[df_mov["nombre"] == filtro_nombre]
 
