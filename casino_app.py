@@ -151,10 +151,10 @@ if rol == "Responsable":
     st.markdown("## 🛋️ Sala de descanso")
 
     if st.button("📦 ASIGNAR empleados a sus mesas"):
-        registrar_movimiento(emp["nombre"], emp["categoria"], "Asignado", emp["mesa_asignada"])
         ids_asignados = []
         for emp in empleados:
             if not emp["mesa"] and emp["mesa_asignada"]:
+                registrar_movimiento(emp["nombre"], emp["categoria"], "Asignado", emp["mesa_asignada"])
                 emp["mesa"] = emp["mesa_asignada"]
                 emp["mesa_asignada"] = None
                 emp["mensaje"] = ""  # 🧹 Limpia el mensaje en la BDD
