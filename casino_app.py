@@ -142,7 +142,7 @@ if rol == "Responsable":
                 for emp in empleados_mesa:
                     st.markdown(f"- 👤 {emp['nombre']} ({emp['categoria']})")
                     if st.button(f"❌ Liberar", key=f"lib_{emp['id']}"):
-                        registrar_movimiento(emp["nombre"], emp["categoria"], "Liberado", f"{emp['mesa']}")
+                        registrar_movimiento(emp["nombre"], emp["categoria"], "Liberado", "Sala de descanso")
                         emp["mesa"] = None
                         actualizar_empleado(emp)
                         st.rerun()
