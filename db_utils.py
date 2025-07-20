@@ -117,9 +117,24 @@ def registrar_movimiento(nombre, categoria, accion, destino):
         conn.commit()
 
 def obtener_movimientos():
+    if not os.path.exists(DB_PATH):
+        return []  # Si no existe la base de datos aún
+
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT nombre, categoria, accion, destino, timestamp FROM movimientos ORDER BY timestamp DESC")
+
+        # Verificamos si la tabla existe antes de hacer SELECT
+        cursor.execute("""
+            SELECT name FROM sqlite_master WHERE type='table' AND name='movimientos';
+        """)
+        if not cursor.fetchone():
+            return []  # Si la tabla no existe
+
+        cursor.execute("""
+            SELECT nombre, categoria, accion, destino, timestamp
+            FROM movimientos
+            ORDER BY timestamp DESC
+        """)
         filas = cursor.fetchall()
         columnas = [col[0] for col in cursor.description]
         return [dict(zip(columnas, fila)) for fila in filas]
