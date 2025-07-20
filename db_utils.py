@@ -90,20 +90,13 @@ def obtener_finalizados():
 def reingresar_empleado(emp):
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
-
-        # Eliminamos de finalizados
         cursor.execute("DELETE FROM finalizados WHERE id = ?", (emp["id"],))
-
-        # Restauramos en sala de descanso
         cursor.execute("""
             INSERT INTO empleados (id, nombre, categoria, foto, mesa, mesa_asignada, mensaje)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             emp["id"], emp["nombre"], emp["categoria"],
-            None,  # foto
-            None,  # mesa
-            None,  # mesa_asignada
-            ""     # mensaje
+            None, None, None, ""
         ))
         conn.commit()
 
@@ -118,21 +111,13 @@ def registrar_movimiento(nombre, categoria, accion, destino):
 
 def obtener_movimientos():
     if not os.path.exists(DB_PATH):
-        return []  # Si no existe la base de datos aún
-
+        return []
     with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT name FROM sqlite_master WHERE type='table' AND name='movimientos';
-        """)
-        if not cursor.fetchone():
-            return []  # Si la tabla no existe
-
         cursor.execute("""
             SELECT nombre, categoria, accion, destino, timestamp
             FROM movimientos
             ORDER BY timestamp DESC
         """)
-        filas = cursor.fetchall()
-        columnas = [col[0] for col in cursor.description]
-        return [dict(zip(columnas, fila)) for fila in filas]
+        return [dict(row) for row in cursor.fetchall()]
