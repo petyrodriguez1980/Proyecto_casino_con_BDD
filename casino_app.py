@@ -165,7 +165,7 @@ if rol == "Responsable":
                                 for emp2 in empleados_mesa:
                                     st.session_state[f"expander_{emp2['id']}"] = False
                                 
-                                st.experimental_rerun()
+                                st.rerun()
                     except Exception as e:
                         st.error(f"Error al crear expander: {e}")
                         st.write(f"expander_key: {expander_key}, valor en session_state: {st.session_state.get(expander_key)}")
