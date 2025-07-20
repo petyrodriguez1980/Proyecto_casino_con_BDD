@@ -6,6 +6,9 @@ from db_utils import (
     init_db, obtener_empleados, agregar_empleado, actualizar_empleado,
     mover_a_finalizados, obtener_finalizados
 )
+from db_utils import (
+    init_db, obtener_empleados, agregar_empleado, actualizar_empleado,
+    mover_a_finalizados, obtener_finalizados, registrar_movimiento
 import os
 
 st.set_page_config(layout="wide")
@@ -102,6 +105,7 @@ if rol == "Responsable":
         categoria_nueva = st.selectbox("Categoría", opciones_categoria, key="categoria_nueva")
 
         if st.button("Agregar"):
+            registrar_movimiento(nombre_nuevo, categoria_nueva, "Ingresó", "Sala de descanso")
             if not nombre_nuevo:
                 st.warning("Por favor ingresa un nombre.")
             elif categoria_nueva == "Seleccionar":
@@ -137,6 +141,7 @@ if rol == "Responsable":
                 for emp in empleados_mesa:
                     st.markdown(f"- 👤 {emp['nombre']} ({emp['categoria']})")
                     if st.button(f"❌ Liberar", key=f"lib_{emp['id']}"):
+                        registrar_movimiento(emp["nombre"], emp["categoria"], "Liberado", f"{emp['mesa']}")
                         emp["mesa"] = None
                         actualizar_empleado(emp)
                         st.rerun()
@@ -145,6 +150,7 @@ if rol == "Responsable":
     st.markdown("## 🛋️ Sala de descanso")
 
     if st.button("📦 ASIGNAR empleados a sus mesas"):
+        registrar_movimiento(emp["nombre"], emp["categoria"], "Asignado", emp["mesa_asignada"])
         ids_asignados = []
         for emp in empleados:
             if not emp["mesa"] and emp["mesa_asignada"]:
@@ -182,6 +188,7 @@ if rol == "Responsable":
                     st.rerun()
 
                 if st.button("🛑 Finalizar jornada", key=f"fin_{emp['id']}"):
+                    registrar_movimiento(emp["nombre"], emp["categoria"], "Finalizó", "-")
                     mover_a_finalizados(emp)
                     st.rerun()
 
@@ -192,6 +199,7 @@ if rol == "Responsable":
             for emp in finalizados:
                 st.markdown(f"**👋 {emp['nombre']} ({emp['categoria']})**")
                 if st.button("🔁 Reingresar", key=f"reing_{emp['id']}"):
+                    registrar_movimiento(emp["nombre"], emp["categoria"], "Reingresó", "Sala de descanso")
                     from db_utils import reingresar_empleado
 
                     reingresar_empleado(emp)
