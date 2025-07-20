@@ -132,15 +132,14 @@ if rol == "Responsable":
         with col_mesas[i % 4]:
             with st.container():
                 st.markdown(f"""<div style='border: 2px solid #ccc; border-radius: 12px; padding: 10px; margin-bottom: 10px; background-color: #f9f9f9;'>
-                    <h4 style='text-align: center;'>🃏 {nombre_mesa}</h4>""", unsafe_allow_html=True)
-                for emp in empleados_mesa:
-                    st.markdown(f"- 👤 {emp['nombre']} ({emp['categoria']})")
+                <h4 style='text-align: center;'>🃏 {nombre_mesa}</h4>""", unsafe_allow_html=True)
                 
+                for emp in empleados_mesa:
                     expander_key = f"expander_{emp['id']}"
                     if expander_key not in st.session_state:
                         st.session_state[expander_key] = False  # Por defecto cerrado
                     
-                    with st.expander("Enviar a:", expanded=st.session_state[expander_key], key=expander_key):
+                    with st.expander(f"👤 {emp['nombre']} ({emp['categoria']})", expanded=st.session_state[expander_key], key=expander_key):
                         nueva_opcion = st.selectbox("Selecciona destino", opciones_envio, key=f"enviar_a_{emp['id']}")
                         if st.button("Confirmar", key=f"confirmar_envio_{emp['id']}"):
                             if nueva_opcion == "Sala de descanso":
@@ -154,11 +153,11 @@ if rol == "Responsable":
                                 registrar_movimiento(emp["nombre"], emp["categoria"], "Asignado", nueva_opcion)
                                 emp["mesa"] = nueva_opcion
                                 actualizar_empleado(emp)
-                        
+                            
                             st.session_state[expander_key] = False  # Cierra el expander al confirmar
                             st.rerun()
-                        
-                        st.markdown("</div>", unsafe_allow_html=True)
+                
+                st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("## 🛋️ Sala de descanso")
 
