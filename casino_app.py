@@ -237,3 +237,44 @@ with st.expander("Ver historial de todos los empleados"):
             st.markdown(f"- {msg}")
     else:
         st.info("Aún no hay movimientos registrados.")
+
+# ----------- SECCIÓN SICUAL PARA CONSULTAR HISTORIAL DE MOVIMIENTOS -----------
+if rol == "Responsable":
+    st.markdown("---")
+    st.markdown("## 📜 Historial de movimientos")
+
+    movimientos = obtener_movimientos()
+
+    if not movimientos:
+        st.info("No hay movimientos registrados.")
+    else:
+        import pandas as pd
+
+        df_mov = pd.DataFrame(movimientos)
+        df_mov["timestamp"] = pd.to_datetime(df_mov["timestamp"])
+        df_mov = df_mov.sort_values("timestamp", ascending=False)
+
+        # Filtros
+        col1, col2 = st.columns(2)
+        with col1:
+            filtro_nombre = st.text_input("Filtrar por nombre")
+        with col2:
+            filtro_accion = st.selectbox("Filtrar por acción", ["Todas"] + sorted(df_mov["accion"].unique()))
+
+        if filtro_nombre:
+            df_mov = df_mov[df_mov["nombre"].str.contains(filtro_nombre, case=False, na=False)]
+
+        if filtro_accion != "Todas":
+            df_mov = df_mov[df_mov["accion"] == filtro_accion]
+
+        st.dataframe(
+            df_mov[["timestamp", "nombre", "categoria", "accion", "destino"]].rename(columns={
+                "timestamp": "Fecha y hora",
+                "nombre": "Empleado",
+                "categoria": "Categoría",
+                "accion": "Acción",
+                "destino": "Destino"
+            }),
+            use_container_width=True,
+            hide_index=True
+        )
