@@ -223,23 +223,9 @@ for emp in empleados:
                 (f"Mensaje: {emp['mensaje']} " if emp['mensaje'] else ""))
 
 
+# ----------- SECCIÓN SICUAL PARA CONSULTAR HISTORIAL DE MOVIMIENTOS -----------
 from db_utils import obtener_movimientos
 
-st.markdown("---")
-st.markdown("## 📜 Historial de movimientos")
-
-with st.expander("Ver historial de todos los empleados"):
-    movimientos = obtener_movimientos()
-    if movimientos:
-        for nombre, categoria, accion, destino, timestamp in movimientos:
-            msg = f"🕒 {timestamp} - 👤 {nombre} ({categoria}) - {accion}"
-            if destino:
-                msg += f" → {destino}"
-            st.markdown(f"- {msg}")
-    else:
-        st.info("Aún no hay movimientos registrados.")
-
-# ----------- SECCIÓN SICUAL PARA CONSULTAR HISTORIAL DE MOVIMIENTOS -----------
 if rol == "Responsable":
     st.markdown("---")
     st.markdown("## 📜 Historial de movimientos")
