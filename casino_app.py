@@ -223,7 +223,7 @@ for emp in empleados:
                 (f"Mensaje: {emp['mensaje']} " if emp['mensaje'] else ""))
 
 
-# ----------- SECCIÓN SICUAL PARA CONSULTAR HISTORIAL DE MOVIMIENTOS -----------
+# ----------- SECCIÓN VISUAL PARA CONSULTAR HISTORIAL DE MOVIMIENTOS -----------
 from db_utils import obtener_movimientos
 
 if rol == "Responsable":
@@ -243,13 +243,17 @@ if rol == "Responsable":
 
         # Filtros
         col1, col2 = st.columns(2)
+        
+        nombres_unicos = sorted(df_mov["nombre"].dropna().unique())
+        
         with col1:
-            filtro_nombre = st.text_input("Filtrar por nombre")
+            filtro_nombre = st.selectbox("Filtrar por nombre", ["Todos"] + nombres_unicos)
+        
         with col2:
-            filtro_accion = st.selectbox("Filtrar por acción", ["Todas"] + sorted(df_mov["accion"].unique()))
-
-        if filtro_nombre:
-            df_mov = df_mov[df_mov["nombre"].str.contains(filtro_nombre, case=False, na=False)]
+            filtro_accion = st.selectbox("Filtrar por acción", ["Todas"] + sorted(df_mov["accion"].dropna().unique()))
+        
+        if filtro_nombre != "Todos":
+            df_mov = df_mov[df_mov["nombre"] == filtro_nombre]
 
         if filtro_accion != "Todas":
             df_mov = df_mov[df_mov["accion"] == filtro_accion]
