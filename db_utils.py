@@ -96,3 +96,22 @@ def reingresar_empleado(emp):
             ""     # mensaje
         ))
         conn.commit()
+
+def registrar_movimiento(nombre, categoria, accion, destino):
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS movimientos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT,
+                categoria TEXT,
+                accion TEXT,
+                destino TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute("""
+            INSERT INTO movimientos (nombre, categoria, accion, destino)
+            VALUES (?, ?, ?, ?)
+        """, (nombre, categoria, accion, destino))
+        conn.commit()
