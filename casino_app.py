@@ -212,3 +212,20 @@ for emp in empleados:
     if not emp["mesa"] and emp["mesa_asignada"]:
         st.info(f"{emp['nombre']} será enviado a **{emp['mesa_asignada']}**. " +
                 (f"Mensaje: {emp['mensaje']} " if emp['mensaje'] else ""))
+
+
+from db_utils import obtener_movimientos
+
+st.markdown("---")
+st.markdown("## 📜 Historial de movimientos")
+
+with st.expander("Ver historial de todos los empleados"):
+    movimientos = obtener_movimientos()
+    if movimientos:
+        for nombre, categoria, accion, destino, timestamp in movimientos:
+            msg = f"🕒 {timestamp} - 👤 {nombre} ({categoria}) - {accion}"
+            if destino:
+                msg += f" → {destino}"
+            st.markdown(f"- {msg}")
+    else:
+        st.info("Aún no hay movimientos registrados.")
