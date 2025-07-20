@@ -135,35 +135,37 @@ if rol == "Responsable":
                 <h4 style='text-align: center;'>🃏 {nombre_mesa}</h4>""", unsafe_allow_html=True)
                 
                 for emp in empleados_mesa:
-                    emp_id = str(emp.get("id") or uuid.uuid4())
+                    emp_id = str(emp.get("id") or str(uuid.uuid4()))
                     expander_key = f"expander_{emp_id}"
                     
-                    if expander_key not in st.session_state:
+                    if expander_key not in st.session_state or not isinstance(st.session_state[expander_key], bool):
                         st.session_state[expander_key] = False
                     
                     nombre = emp.get("nombre") or "Sin nombre"
                     categoria = emp.get("categoria") or "Sin categoría"
                     titulo_expander = f"👤 {nombre} ({categoria})"
                     
-                    st.write(f"DEBUG: Expander key = {expander_key}, título = {titulo_expander}")  # Para debug, puedes eliminar después
-                    
-                    with st.expander(titulo_expander, expanded=st.session_state[expander_key], key=expander_key):
-                        nueva_opcion = st.selectbox("Selecciona destino", opciones_envio, key=f"enviar_a_{emp_id}")
-                        if st.button("Confirmar", key=f"confirmar_envio_{emp_id}"):
-                            if nueva_opcion == "Sala de descanso":
-                                registrar_movimiento(nombre, categoria, "Liberado", "Sala de descanso")
-                                emp["mesa"] = None
-                                actualizar_empleado(emp)
-                            elif nueva_opcion == "Finalizar jornada":
-                                registrar_movimiento(nombre, categoria, "Finalizó", "-")
-                                mover_a_finalizados(emp)
-                            else:
-                                registrar_movimiento(nombre, categoria, "Asignado", nueva_opcion)
-                                emp["mesa"] = nueva_opcion
-                                actualizar_empleado(emp)
-                            
-                            st.session_state[expander_key] = False
-                            st.rerun()
+                    try:
+                        with st.expander(titulo_expander, expanded=st.session_state[expander_key], key=expander_key):
+                            nueva_opcion = st.selectbox("Selecciona destino", opciones_envio, key=f"enviar_a_{emp_id}")
+                            if st.button("Confirmar", key=f"confirmar_envio_{emp_id}"):
+                                if nueva_opcion == "Sala de descanso":
+                                    registrar_movimiento(nombre, categoria, "Liberado", "Sala de descanso")
+                                    emp["mesa"] = None
+                                    actualizar_empleado(emp)
+                                elif nueva_opcion == "Finalizar jornada":
+                                    registrar_movimiento(nombre, categoria, "Finalizó", "-")
+                                    mover_a_finalizados(emp)
+                                else:
+                                    registrar_movimiento(nombre, categoria, "Asignado", nueva_opcion)
+                                    emp["mesa"] = nueva_opcion
+                                    actualizar_empleado(emp)
+                                
+                                st.session_state[expander_key] = False
+                                st.experimental_rerun()
+                    except Exception as e:
+                        st.error(f"Error al crear expander: {e}")
+                        st.write(f"expander_key: {expander_key}, valor en session_state: {st.session_state.get(expander_key)}")
                 
                 st.markdown("</div>", unsafe_allow_html=True)
 
