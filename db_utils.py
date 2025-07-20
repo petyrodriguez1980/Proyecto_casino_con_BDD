@@ -1,5 +1,7 @@
 import sqlite3
 import os
+from datetime import datetime
+import pytz
 
 DB_PATH = "casino.db"
 
@@ -103,10 +105,15 @@ def reingresar_empleado(emp):
 def registrar_movimiento(nombre, categoria, accion, destino):
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
+
+        zona_es = pytz.timezone("Europe/Madrid")
+        ahora_local = datetime.now(zona_es)
+        timestamp = ahora_local.strftime("%Y-%m-%d %H:%M:%S")
+
         cursor.execute("""
-            INSERT INTO movimientos (nombre, categoria, accion, destino)
-            VALUES (?, ?, ?, ?)
-        """, (nombre, categoria, accion, destino))
+            INSERT INTO movimientos (nombre, categoria, accion, destino, timestamp)
+            VALUES (?, ?, ?, ?, ?)
+        """, (nombre, categoria, accion, destino, timestamp))
         conn.commit()
 
 def obtener_movimientos():
