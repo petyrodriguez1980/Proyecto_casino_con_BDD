@@ -146,7 +146,7 @@ if rol == "Responsable":
                     titulo_expander = f"👤 {nombre} ({categoria})"
                     
                     try:
-                        with st.expander(titulo_expander, expanded=st.session_state[expander_key], key=expander_key):
+                        with st.expander(titulo_expander, expanded=st.session_state[expander_key]):
                             nueva_opcion = st.selectbox("Selecciona destino", opciones_envio, key=f"enviar_a_{emp_id}")
                             if st.button("Confirmar", key=f"confirmar_envio_{emp_id}"):
                                 if nueva_opcion == "Sala de descanso":
@@ -161,7 +161,10 @@ if rol == "Responsable":
                                     emp["mesa"] = nueva_opcion
                                     actualizar_empleado(emp)
                                 
-                                st.session_state[expander_key] = False
+                                # 🔐 Cierra todos los expanders de la mesa actual
+                                for emp2 in empleados_mesa:
+                                    st.session_state[f"expander_{emp2['id']}"] = False
+                                
                                 st.experimental_rerun()
                     except Exception as e:
                         st.error(f"Error al crear expander: {e}")
