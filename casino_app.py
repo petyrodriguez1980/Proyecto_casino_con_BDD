@@ -6,10 +6,10 @@ from db_utils import (
     init_db, obtener_empleados, agregar_empleado, actualizar_empleado,
     mover_a_finalizados, obtener_finalizados
 )
+import os
 from db_utils import (
     init_db, obtener_empleados, agregar_empleado, actualizar_empleado,
     mover_a_finalizados, obtener_finalizados, registrar_movimiento
-import os
 
 st.set_page_config(layout="wide")
 
