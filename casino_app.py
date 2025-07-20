@@ -139,7 +139,7 @@ if rol == "Responsable":
                     expander_key = f"expander_{emp['id']}"
                     if expander_key not in st.session_state:
                         st.session_state[expander_key] = False  # Por defecto cerrado
-                
+                    
                     with st.expander("Enviar a:", expanded=st.session_state[expander_key], key=expander_key):
                         nueva_opcion = st.selectbox("Selecciona destino", opciones_envio, key=f"enviar_a_{emp['id']}")
                         if st.button("Confirmar", key=f"confirmar_envio_{emp['id']}"):
@@ -157,8 +157,8 @@ if rol == "Responsable":
                         
                             st.session_state[expander_key] = False  # Cierra el expander al confirmar
                             st.rerun()
-
-                st.markdown("</div>", unsafe_allow_html=True)
+                        
+                        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("## 🛋️ Sala de descanso")
 
