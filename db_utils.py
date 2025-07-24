@@ -2,6 +2,7 @@ import sqlite3
 import os
 from datetime import datetime
 import pytz
+import uuid
 
 DB_PATH = "casino.db"
 
@@ -46,8 +47,13 @@ def agregar_empleado(empleado):
             INSERT INTO empleados (id, nombre, categoria, foto, mesa, mesa_asignada, mensaje)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
-            empleado["id"], empleado["nombre"], empleado["categoria"], empleado["foto"],
-            empleado["mesa"], empleado["mesa_asignada"], empleado["mensaje"]
+            empleado.get("id"),
+            empleado.get("nombre"),
+            empleado.get("categoria"),
+            empleado.get("foto", None),
+            empleado.get("mesa", None),
+            empleado.get("mesa_asignada", None),
+            empleado.get("mensaje", "")
         ))
         conn.commit()
 
@@ -97,8 +103,13 @@ def reingresar_empleado(emp):
             INSERT INTO empleados (id, nombre, categoria, foto, mesa, mesa_asignada, mensaje)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
-            emp["id"], emp["nombre"], emp["categoria"],
-            None, None, None, ""
+            emp["id"],
+            emp["nombre"],
+            emp["categoria"],
+            None,  # foto
+            None if emp["mesa"] == "Sala de descanso" else emp["mesa"],
+            None,  # mesa_asignada
+            emp.get("mensaje", "")
         ))
         conn.commit()
 
@@ -128,3 +139,76 @@ def obtener_movimientos():
             ORDER BY timestamp DESC
         """)
         return [dict(row) for row in cursor.fetchall()]
+
+def obtener_empleados_en_mesa():
+    empleados_en_mesa = {}
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # Obtener todos los movimientos ordenados cronológicamente
+        cursor.execute("SELECT * FROM movimientos ORDER BY timestamp ASC")
+        movimientos = cursor.fetchall()
+
+        for mov in movimientos:
+            nombre = mov["nombre"]
+            categoria = mov["categoria"]
+            accion = mov["accion"]
+            destino = mov["destino"]
+            timestamp = datetime.strptime(mov["timestamp"], "%Y-%m-%d %H:%M:%S")
+
+            # Buscar el ID del empleado actual
+            cursor.execute("SELECT id FROM empleados WHERE nombre = ?", (nombre,))
+            fila = cursor.fetchone()
+            emp_id = fila["id"] if fila else str(uuid.uuid4())
+
+            if accion == "Asignado":
+                # Solo registrar si aún no está en mesa
+                if nombre not in empleados_en_mesa:
+                    empleados_en_mesa[nombre] = {
+                        "id": emp_id,
+                        "nombre": nombre,
+                        "categoria": categoria,
+                        "destino": destino,
+                        "hora": timestamp
+                    }
+            elif accion in ["Liberado", "Finalizó"]:
+                empleados_en_mesa.pop(nombre, None)
+
+    return empleados_en_mesa
+
+def mostrar_tiempo_en_mesa(emp):
+    from streamlit.components.v1 import html
+    from datetime import datetime
+
+    nombre = emp["nombre"]
+    categoria = emp["categoria"]
+    destino = emp["destino"]
+    hora = emp["hora"]  # datetime object
+
+    epoch_ms = int(hora.timestamp() * 1000)
+
+    reloj_html = f"""
+    <div style='margin-bottom: 10px; font-weight: bold; color: darkgreen; font-size: 16px;'>
+            {nombre} ({categoria}) - {destino} -
+            <span id="tiempo_{emp['id']}" style="text-decoration: underline;"></span>
+    </div>
+    <script>
+        const inicio_{emp['id']} = {epoch_ms};
+        function actualizar_{emp['id']}() {{
+            const ahora = Date.now();
+            let diff = Math.floor((ahora - inicio_{emp['id']}) / 1000);  // segundos
+
+            const horas = String(Math.floor(diff / 3600)).padStart(2, '0');
+            diff %= 3600;
+            const minutos = String(Math.floor(diff / 60)).padStart(2, '0');
+            const segundos = String(diff % 60).padStart(2, '0');
+
+            document.getElementById("tiempo_{emp['id']}").textContent = `${{horas}}:${{minutos}}:${{segundos}}`;
+        }}
+        setInterval(actualizar_{emp['id']}, 1000);
+        actualizar_{emp['id']}();
+    </script>
+    """
+    html(reloj_html, height=35)
