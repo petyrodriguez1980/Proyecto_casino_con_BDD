@@ -14,7 +14,6 @@ def init_db():
                 CREATE TABLE IF NOT EXISTS empleados (
                     id TEXT PRIMARY KEY,
                     nombre TEXT,
-                    categoria TEXT,
                     foto TEXT,
                     mesa TEXT,
                     mesa_asignada TEXT,
@@ -22,17 +21,19 @@ def init_db():
                 )
             """)
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS finalizados (
-                    id TEXT PRIMARY KEY,
-                    nombre TEXT,
-                    categoria TEXT
-                )
+            CREATE TABLE IF NOT EXISTS finalizados (
+                id TEXT PRIMARY KEY,
+                nombre TEXT,
+                foto TEXT,
+                mesa TEXT,
+                mesa_asignada TEXT,
+                mensaje TEXT
+            )
             """)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS movimientos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     nombre TEXT,
-                    categoria TEXT,
                     accion TEXT,
                     destino TEXT,
                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -44,12 +45,11 @@ def agregar_empleado(empleado):
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO empleados (id, nombre, categoria, foto, mesa, mesa_asignada, mensaje)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO empleados (id, nombre, foto, mesa, mesa_asignada, mensaje)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, (
             empleado.get("id"),
             empleado.get("nombre"),
-            empleado.get("categoria"),
             empleado.get("foto", None),
             empleado.get("mesa", None),
             empleado.get("mesa_asignada", None),
@@ -70,10 +70,10 @@ def actualizar_empleado(empleado):
         cursor = conn.cursor()
         cursor.execute("""
             UPDATE empleados
-            SET nombre = ?, categoria = ?, foto = ?, mesa = ?, mesa_asignada = ?, mensaje = ?
+            SET nombre = ?, foto = ?, mesa = ?, mesa_asignada = ?, mensaje = ?
             WHERE id = ?
         """, (
-            empleado["nombre"], empleado["categoria"], empleado["foto"], empleado["mesa"],
+            empleado["nombre"], empleado["foto"], empleado["mesa"],
             empleado["mesa_asignada"], empleado["mensaje"], empleado["id"]
         ))
         conn.commit()
@@ -82,8 +82,8 @@ def mover_a_finalizados(empleado):
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO finalizados (id, nombre, categoria) VALUES (?, ?, ?)
-        """, (empleado["id"], empleado["nombre"], empleado["categoria"]))
+            INSERT INTO finalizados (id, nombre) VALUES (?, ?)
+        """, (empleado["id"], empleado["nombre"]))
         cursor.execute("DELETE FROM empleados WHERE id = ?", (empleado["id"],))
         conn.commit()
 
@@ -100,12 +100,11 @@ def reingresar_empleado(emp):
         cursor = conn.cursor()
         cursor.execute("DELETE FROM finalizados WHERE id = ?", (emp["id"],))
         cursor.execute("""
-            INSERT INTO empleados (id, nombre, categoria, foto, mesa, mesa_asignada, mensaje)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO empleados (id, nombre, foto, mesa, mesa_asignada, mensaje)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, (
             emp["id"],
             emp["nombre"],
-            emp["categoria"],
             None,  # foto
             None if emp["mesa"] == "Sala de descanso" else emp["mesa"],
             None,  # mesa_asignada
@@ -113,7 +112,7 @@ def reingresar_empleado(emp):
         ))
         conn.commit()
 
-def registrar_movimiento(nombre, categoria, accion, destino):
+def registrar_movimiento(nombre, accion, destino):
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
 
@@ -122,9 +121,9 @@ def registrar_movimiento(nombre, categoria, accion, destino):
         timestamp = ahora_local.strftime("%Y-%m-%d %H:%M:%S")
 
         cursor.execute("""
-            INSERT INTO movimientos (nombre, categoria, accion, destino, timestamp)
-            VALUES (?, ?, ?, ?, ?)
-        """, (nombre, categoria, accion, destino, timestamp))
+            INSERT INTO movimientos (nombre, accion, destino, timestamp)
+            VALUES (?, ?, ?, ?)
+        """, (nombre, accion, destino, timestamp))
         conn.commit()
 
 def obtener_movimientos():
@@ -134,7 +133,7 @@ def obtener_movimientos():
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT nombre, categoria, accion, destino, timestamp
+            SELECT nombre, accion, destino, timestamp
             FROM movimientos
             ORDER BY timestamp DESC
         """)
@@ -153,7 +152,6 @@ def obtener_empleados_en_mesa():
 
         for mov in movimientos:
             nombre = mov["nombre"]
-            categoria = mov["categoria"]
             accion = mov["accion"]
             destino = mov["destino"]
             timestamp = datetime.strptime(mov["timestamp"], "%Y-%m-%d %H:%M:%S")
@@ -169,7 +167,7 @@ def obtener_empleados_en_mesa():
                     empleados_en_mesa[nombre] = {
                         "id": emp_id,
                         "nombre": nombre,
-                        "categoria": categoria,
+
                         "destino": destino,
                         "hora": timestamp
                     }
@@ -183,7 +181,7 @@ def mostrar_tiempo_en_mesa(emp):
     from datetime import datetime
 
     nombre = emp["nombre"]
-    categoria = emp["categoria"]
+
     destino = emp["destino"]
     hora = emp["hora"]  # datetime object
 
@@ -191,7 +189,7 @@ def mostrar_tiempo_en_mesa(emp):
 
     reloj_html = f"""
     <div style='margin-bottom: 10px; font-weight: bold; color: darkgreen; font-size: 16px;'>
-            {nombre} ({categoria}) - {destino} -
+            {nombre} - {destino} -
             <span id="tiempo_{emp['id']}" style="text-decoration: underline;"></span>
     </div>
     <script>

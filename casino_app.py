@@ -83,7 +83,7 @@ def mostrar_reloj_js():
 
 # ----------- INICIALIZACIÓN -----------
 init_db()
-nombres_mesas = ["RA1", "RA2", "RA3", "RA4", "BJ1", "BJ2", "PK1", "iT-PK", "iT-BJ", "TEXAS", "PB", "Mini PB"]
+nombres_mesas = ["Jefe RA1-RA2", "Jefe RA3-RA4", "Jefe BJ1-PK1", "Jefe Texas", "RA1", "RA2",  "RA3", "RA4",  "BJ1", "BJ2", "PK1", "iT-PK", "iT-BJ", "Texas 1", "Texas 2", "Texas 3", "PB", "Mini PB"]
 
 opciones_envio = nombres_mesas + ["Sala de descanso", "Finalizar jornada"]
 
@@ -99,23 +99,21 @@ if rol == "Responsable":
 
     if st.session_state.get("limpiar_campos", False):
         st.session_state["nombre_nuevo"] = ""
-        st.session_state["categoria_nueva"] = "Seleccionar"
+
         st.session_state["limpiar_campos"] = False
 
     with st.sidebar:
         st.markdown("## ➕ Agregar empleado")
         nombre_nuevo = st.text_input("Nombre", key="nombre_nuevo")
-        opciones_categoria = ["Seleccionar", "Jefe de Mesa", "Crupier de 1º", "Crupier de 2º", "Crupier de 3º"]
-        categoria_nueva = st.selectbox("Categoría", opciones_categoria, key="categoria_nueva")
+
 
         if st.button("Agregar"):
             if not nombre_nuevo:
                 st.warning("Por favor ingresa un nombre.")
-            elif categoria_nueva == "Seleccionar":
-                st.warning("Por favor selecciona una categoría válida.")
+
             else:
                 nuevo = {
-                    "id": str(uuid.uuid4()), "nombre": nombre_nuevo, "categoria": categoria_nueva,
+                    "id": str(uuid.uuid4()), "nombre": nombre_nuevo,
                     "foto": None, "mesa": None, "mesa_asignada": None, "mensaje": ""
                 }
 
@@ -140,7 +138,7 @@ if rol == "Responsable":
     for i, (nombre_mesa, empleados_mesa) in enumerate(mesas.items()):
         with col_mesas[i % 4]:
             with st.container():
-                st.markdown(f"""<div style='border: 2px solid #ccc; border-radius: 12px; padding: 10px; margin-bottom: 10px; background-color: #f9f9f9;'>
+                st.markdown(f"""<div style='border: 2px solid #ccc; border-radius: 12px; padding: 0px; margin-bottom: 10px; background-color: #f9f9f9;'>
                 <h4 style='text-align: center;'>🃏 {nombre_mesa}</h4>""", unsafe_allow_html=True)
 
                 for emp in empleados_mesa:
@@ -151,22 +149,22 @@ if rol == "Responsable":
                         st.session_state[expander_key] = False
 
                     nombre = emp.get("nombre") or "Sin nombre"
-                    categoria = emp.get("categoria") or "Sin categoría"
-                    titulo_expander = f"👤 {nombre} ({categoria})"
+
+                    titulo_expander = f"👤 {nombre}"
 
                     try:
                         with st.expander(titulo_expander, expanded=st.session_state[expander_key]):
-                            nueva_opcion = st.selectbox("Selecciona destino", opciones_envio, key=f"enviar_a_{emp_id}")
+                            nueva_opcion = st.selectbox("Destino", opciones_envio, key=f"enviar_a_{emp_id}")
                             if st.button("Confirmar", key=f"confirmar_envio_{emp_id}"):
                                 if nueva_opcion == "Sala de descanso":
-                                    registrar_movimiento(nombre, categoria, "Liberado", "Sala de descanso")
+                                    registrar_movimiento(nombre, "Liberado", "Sala de descanso")
                                     emp["mesa"] = None
                                     actualizar_empleado(emp)
                                 elif nueva_opcion == "Finalizar jornada":
-                                    registrar_movimiento(nombre, categoria, "Finalizó", "-")
+                                    registrar_movimiento(nombre, "Finalizó", "-")
                                     mover_a_finalizados(emp)
                                 else:
-                                    registrar_movimiento(nombre, categoria, "Asignado", nueva_opcion)
+                                    registrar_movimiento(nombre, "Asignado", nueva_opcion)
                                     emp["mesa"] = nueva_opcion
                                     actualizar_empleado(emp)
 
@@ -192,7 +190,7 @@ if rol == "Responsable":
             ids_asignados = []
             for emp in empleados:
                 if not emp["mesa"] and emp["mesa_asignada"]:
-                    registrar_movimiento(emp["nombre"], emp["categoria"], "Asignado", emp["mesa_asignada"])
+                    registrar_movimiento(emp["nombre"], "Asignado", emp["mesa_asignada"])
                     emp["mesa"] = emp["mesa_asignada"]
                     emp["mesa_asignada"] = None
                     emp["mensaje"] = ""
@@ -211,7 +209,7 @@ if rol == "Responsable":
 
         for emp in empleados:
             if not emp["mesa"]:
-                with st.expander(f"👤 {emp['nombre']} ({emp['categoria']})"):
+                with st.expander(f"👤 {emp['nombre']}"):
                     nueva_mesa_asig = st.selectbox("Asignar a mesa:", [None] + nombres_mesas,
                                                    index=0 if not emp["mesa_asignada"] else nombres_mesas.index(
                                                        emp["mesa_asignada"]) + 1,
@@ -225,7 +223,7 @@ if rol == "Responsable":
                         st.rerun()
 
                     if st.button("🛑 Finalizar jornada", key=f"fin_{emp['id']}"):
-                        registrar_movimiento(emp["nombre"], emp["categoria"], "Finalizó", "-")
+                        registrar_movimiento(emp["nombre"], "Finalizó", "-")
                         mover_a_finalizados(emp)
                         st.rerun()
 
@@ -253,13 +251,11 @@ if rol == "Responsable":
 
             for emp in empleados_en_mesa.values():
                 nombre = emp['nombre']
-                categoria = emp['categoria']
-                destino = emp['destino']
                 hora_js = emp["hora"].strftime("%Y-%m-%dT%H:%M:%S")  # formato compatible con Date()
 
                 contenedor_html += f"""
                 <div style="margin-bottom: 8px;">
-                    ♠️ <strong>{nombre}</strong> ({categoria}) - {destino} - 
+                    ♠️ <strong>{nombre}</strong>
                     <span class="tiempo-transcurrido" data-hora-ingreso="{hora_js}">Cargando...</span>
                 </div>
                 """
@@ -310,14 +306,14 @@ if rol == "Responsable":
             </div>
             """, unsafe_allow_html=True)
             for emp in st.session_state.equipo_hoy:
-                st.markdown(f"**👤 {emp['nombre']} ({emp['categoria']})**")
+                st.markdown(f"**👤 {emp['nombre']} **")
 
                 destino = st.selectbox("Enviar a:", opciones_envio, key=f"destino_equipo_{emp['id']}")
                 if st.button("Confirmar", key=f"confirmar_equipo_{emp['id']}"):
                     accion = "Asignado" if destino not in ["Sala de descanso", "Finalizar jornada"] else (
                         "Liberado" if destino == "Sala de descanso" else "Finalizó"
                     )
-                    registrar_movimiento(emp["nombre"], emp["categoria"], accion, destino)
+                    registrar_movimiento(emp["nombre"], accion, destino)
 
                     if destino == "Finalizar jornada":
                         mover_a_finalizados(emp)
@@ -335,7 +331,7 @@ if rol == "Responsable":
             opciones_envio = nombres_mesas + ["Sala de descanso", "Finalizar jornada"]
 
             for f in finalizados:
-                st.markdown(f"**👤 {f['nombre']} ({f['categoria']})**")
+                st.markdown(f"**👤 {f['nombre']} **")
 
                 clave_destino = f"select_reingreso_{f['id']}"
 
@@ -357,7 +353,7 @@ if rol == "Responsable":
                     if destino_real:
                         f["mesa"] = None if destino_real == "Sala de descanso" else destino_real
                         reingresar_empleado(f)
-                        registrar_movimiento(f["nombre"], f["categoria"], "Asignado", destino_real)
+                        registrar_movimiento(f["nombre"], "Asignado", destino_real)
                         st.success(f"{f['nombre']} fue reingresado a {destino_real}")
                         del st.session_state[clave_destino]
                         st.rerun()
@@ -409,10 +405,10 @@ if rol == "Responsable":
             df_mov = df_mov[df_mov["accion"] == filtro_accion]
 
         st.dataframe(
-            df_mov[["timestamp", "nombre", "categoria", "accion", "destino"]].rename(columns={
+            df_mov[["timestamp", "nombre", "accion", "destino"]].rename(columns={
                 "timestamp": "Fecha y hora",
                 "nombre": "Empleado",
-                "categoria": "Categoría",
+
                 "accion": "Acción",
                 "destino": "Destino"
             }),
