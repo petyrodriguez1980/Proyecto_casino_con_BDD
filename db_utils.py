@@ -161,16 +161,19 @@ def obtener_empleados_en_mesa():
             fila = cursor.fetchone()
             emp_id = fila["id"] if fila else str(uuid.uuid4())
 
-            if accion == "Asignado":
-                # Solo registrar si aún no está en mesa
+            if accion == "Asignado" and destino != "Sala de descanso":
                 if nombre not in empleados_en_mesa:
+                    # Primera vez que se asigna => guardo hora y mesa
                     empleados_en_mesa[nombre] = {
                         "id": emp_id,
                         "nombre": nombre,
-
                         "destino": destino,
                         "hora": timestamp
                     }
+                else:
+                    # Ya está en mesa, actualizo solo el destino
+                    empleados_en_mesa[nombre]["destino"] = destino
+                    # La hora NO se actualiza para conservar el ingreso original
             elif accion in ["Liberado", "Finalizó"]:
                 empleados_en_mesa.pop(nombre, None)
 

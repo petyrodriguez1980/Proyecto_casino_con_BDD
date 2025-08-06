@@ -251,15 +251,15 @@ if rol == "Responsable":
 
             for emp in empleados_en_mesa.values():
                 nombre = emp['nombre']
+                mesa = emp.get("destino", "Sin asignar") or "Sin asignar" #**********BORRAR*********
                 hora_js = emp["hora"].strftime("%Y-%m-%dT%H:%M:%S")  # formato compatible con Date()
 
                 contenedor_html += f"""
                 <div style="margin-bottom: 8px;">
-                    ♠️ <strong>{nombre}</strong>
+                    ♠️ <strong>{nombre}</strong> - Mesa: <strong>{mesa}</strong>
                     <span class="tiempo-transcurrido" data-hora-ingreso="{hora_js}">Cargando...</span>
                 </div>
                 """
-
             contenedor_html += """
             <script>
             function actualizarTiempos() {
@@ -332,24 +332,21 @@ if rol == "Responsable":
 
             for f in finalizados:
                 st.markdown(f"**👤 {f['nombre']} **")
-
                 clave_destino = f"select_reingreso_{f['id']}"
 
-                if clave_destino not in st.session_state:
-                    st.session_state[clave_destino] = "RA1"
+                indice_por_defecto = opciones_envio[:-1].index("RA1") if "RA1" in opciones_envio else 0
 
                 # Mostrar selectbox (valor actual del estado)
                 destino_seleccionado = st.selectbox(
                     "Reingresar a:",
                     opciones_envio[:-1],
                     key=clave_destino,
-                    index=opciones_envio[:-1].index(st.session_state[clave_destino])
+                    index=indice_por_defecto
                 )
 
                 # Solo procesar si se hace clic en el botón
                 if st.button("Reingresar", key=f"reingresar_{f['id']}"):
-                    # Leer el valor actual desde session_state
-                    destino_real = st.session_state.get(clave_destino)
+                    destino_real = st.session_state[clave_destino]
                     if destino_real:
                         f["mesa"] = None if destino_real == "Sala de descanso" else destino_real
                         reingresar_empleado(f)
